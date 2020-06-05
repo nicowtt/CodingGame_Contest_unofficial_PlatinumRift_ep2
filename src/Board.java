@@ -5,21 +5,22 @@ import java.util.Map;
 class Board {
     int zoneCount;
     int linkCount;
-    Map<Integer, Integer> moveZoneMap;
     List<Zone> zoneList;
+    List<MoveObj> movePossiblity;
+    int myBaseZoneId;
+    int oppBAseZoneId;
 
     // constructor
     public Board() {
     }
 
-    public Board(int zoneCount, int linkCount, List<Zone> zoneList) {
+    public Board(int zoneCount, int linkCount, List<MoveObj> movePossiblity) {
         this.zoneCount = zoneCount;
         this.linkCount = linkCount;
-        this.zoneList = zoneList;
+        this.movePossiblity = movePossiblity;
     }
 
     // getters and setters
-
     public Integer getZoneCount() {
         return zoneCount;
     }
@@ -36,12 +37,12 @@ class Board {
         this.linkCount = linkCount;
     }
 
-    public Map<Integer, Integer> getMoveZoneMap() {
-        return moveZoneMap;
+    public List<MoveObj> getMovePossiblity() {
+        return movePossiblity;
     }
 
-    public void setMoveZoneMap(Map<Integer, Integer> moveZoneMap) {
-        this.moveZoneMap = moveZoneMap;
+    public void setMovePossiblity(List<MoveObj> movePossiblity) {
+        this.movePossiblity = movePossiblity;
     }
 
     public List<Zone> getZoneList() {
@@ -50,5 +51,21 @@ class Board {
 
     public void setZoneList(List<Zone> zoneList) {
         this.zoneList = zoneList;
+    }
+
+    public int getMyBaseZoneId() {
+        return myBaseZoneId;
+    }
+
+    public void setMyBaseZoneId(int myBaseZoneId) {
+        this.myBaseZoneId = myBaseZoneId;
+    }
+
+    public int getOppBAseZoneId() {
+        return oppBAseZoneId;
+    }
+
+    public void setOppBAseZoneId(int oppBAseZoneId) {
+        this.oppBAseZoneId = oppBAseZoneId;
     }
 }

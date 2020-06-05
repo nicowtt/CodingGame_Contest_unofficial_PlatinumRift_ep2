@@ -1,27 +1,30 @@
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.List;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 class Board {
     int zoneCount;
     int linkCount;
-    Map<Integer, Integer> moveZoneMap;
     List<Zone> zoneList;
+    List<MoveObj> movePossiblity;
+    int myBaseZoneId;
+    int oppBAseZoneId;
 
     // constructor
     public Board() {
     }
 
-    public Board(int zoneCount, int linkCount, List<Zone> zoneList) {
+    public Board(int zoneCount, int linkCount, List<MoveObj> movePossiblity) {
         this.zoneCount = zoneCount;
         this.linkCount = linkCount;
-        this.zoneList = zoneList;
+        this.movePossiblity = movePossiblity;
     }
 
     // getters and setters
-
     public Integer getZoneCount() {
         return zoneCount;
     }
@@ -38,12 +41,12 @@ class Board {
         this.linkCount = linkCount;
     }
 
-    public Map<Integer, Integer> getMoveZoneMap() {
-        return moveZoneMap;
+    public List<MoveObj> getMovePossiblity() {
+        return movePossiblity;
     }
 
-    public void setMoveZoneMap(Map<Integer, Integer> moveZoneMap) {
-        this.moveZoneMap = moveZoneMap;
+    public void setMovePossiblity(List<MoveObj> movePossiblity) {
+        this.movePossiblity = movePossiblity;
     }
 
     public List<Zone> getZoneList() {
@@ -52,6 +55,60 @@ class Board {
 
     public void setZoneList(List<Zone> zoneList) {
         this.zoneList = zoneList;
+    }
+
+    public int getMyBaseZoneId() {
+        return myBaseZoneId;
+    }
+
+    public void setMyBaseZoneId(int myBaseZoneId) {
+        this.myBaseZoneId = myBaseZoneId;
+    }
+
+    public int getOppBAseZoneId() {
+        return oppBAseZoneId;
+    }
+
+    public void setOppBAseZoneId(int oppBAseZoneId) {
+        this.oppBAseZoneId = oppBAseZoneId;
+    }
+}
+
+class Move {
+    Utils utils = new Utils();
+
+    /**
+     * move 10 pods
+     * choice zone with platinum first
+     * @param board
+     * @return
+     */
+    public String firstMove(Board board) {
+        int myBaseId = board.getMyBaseZoneId();
+        int moveZoneId = -1;
+        List<Zone> zonesAroundMyBase = utils.findZonesAroundZone(board.getMovePossiblity(), board.getMyBaseZoneId(), board);
+        for (Zone zone: zonesAroundMyBase ) { System.err.println("posibility firstMove : " + zone.getzId()); }
+
+        List<Zone> platinumZonePossibility = utils.findPlatinumOnZoneList(zonesAroundMyBase);
+        for (Zone zone: platinumZonePossibility ) { System.err.println("posibility of platinum zone : " + zone.getzId()); }
+
+        if (!platinumZonePossibility.isEmpty()) {
+            moveZoneId = platinumZonePossibility.get(0).getzId();
+        } else {
+            moveZoneId = zonesAroundMyBase.get(0).getzId();
+        }
+    return "10 " + myBaseId + " " + moveZoneId;
+    }
+}
+class MoveObj {
+
+    int firstZoneId;
+    int secondZoneId;
+
+    // constructor
+    public MoveObj(int firstZoneId, int secondZoneId) {
+        this.firstZoneId = firstZoneId;
+        this.secondZoneId = secondZoneId;
     }
 }
 
@@ -62,37 +119,42 @@ class Board {
 class Player {
     Board board;
     Zone zone;
+    MoveObj moveObj;
+    Utils utils;
+    Move move;
 
     public static void main(String args[]) {
         new Player().run();
     }
     public void run() {
+        int turnCount = 0;
         Map<Integer, Integer> moveZone = new HashMap<>();
         List<Zone> zoneList = new ArrayList<>();
-        board = new Board();
+        List<MoveObj> moveObjList = new ArrayList<>();
+        utils = new Utils();
+        move = new Move();
 
         Scanner in = new Scanner(System.in);
         int playerCount = in.nextInt(); // the amount of players (always 2)
         int myId = in.nextInt(); // my player ID (0 or 1)
         int zoneCount = in.nextInt(); // the amount of zones on the map
         int linkCount = in.nextInt(); // the amount of links between all zones
-        board.setZoneCount(zoneCount);
-        board.setLinkCount(linkCount);
         for (int i = 0; i < zoneCount; i++) {
             int zoneId = in.nextInt(); // this zone's ID (between 0 and zoneCount-1)
             int platinumSource = in.nextInt(); // Because of the fog, will always be 0
-
         }
 
         for (int i = 0; i < linkCount; i++) {
             int zone1 = in.nextInt();
             int zone2 = in.nextInt();
-            moveZone.put(zone1, zone2);
+            moveObj = new MoveObj(zone1, zone2);
+            moveObjList.add(moveObj);
         }
-        board.setMoveZoneMap(moveZone);
+        board = new Board(zoneCount, linkCount, moveObjList );
 
         // game loop
         while (true) {
+            turnCount++;
             int myPlatinum = in.nextInt(); // your available Platinum
             for (int i = 0; i < zoneCount; i++) {
                 int zId = in.nextInt(); // this zone's ID
@@ -105,29 +167,85 @@ class Player {
                 zoneList.add(zone);
             }
             board.setZoneList(zoneList);
-
-            // find where my pod are
-            List<Zone> myPodPresence = board.getZoneList().stream()
-                    .filter(z -> z.ownerId == myId)
-                    .collect(Collectors.toList());
-            System.err.println("pod presence list :" + myPodPresence.toString());
-
-            // try to write my first move
-            // todo est ce qu'il y a un lien avec la zone d'a coté?
-            Map<Integer, Integer> possibleMove = board.getMoveZoneMap();
-            Integer firstMove = possibleMove.get(myPodPresence.get(0).getzId());
-            System.err.println("possible first move:" + firstMove);
-
-
-
-            // Write an action using System.out.println()
-            // To debug: System.err.println("Debug messages...");
+            if (turnCount == 1) { // search for first move
+                int myZoneBaseId = utils.findMyBaseZoneId(board, myId);
+                int oppZoneBasId = utils.findOppBAseZoneId(board, utils.findOppId(myId));
+                board.setMyBaseZoneId(myZoneBaseId);
+                board.setOppBAseZoneId(oppZoneBasId);
+            }
 
 
             // first line for movement commands, second line no longer used (see the protocol in the statement for details)
-            System.out.println("10 " + myPodPresence.get(0).getzId() + " " + firstMove);
+            if (turnCount == 1) {
+                System.out.println(move.firstMove(board));
+            } else {
+                System.out.println("WAIT");
+            }
             System.out.println("WAIT");
         }
+    }
+}
+class Utils {
+
+    public List<Zone> findZonesAroundZone(List<MoveObj> moveObjList, int inputZoneId, Board board) {
+        List<Integer> zoneIdAroundInputInteger = new ArrayList<>();
+        List<Zone> zoneAroundInputZone = new ArrayList<>();
+        for (MoveObj move: moveObjList) {
+            if (move.firstZoneId == inputZoneId ) {
+                zoneAroundInputZone.add(this.findZoneWithId(board, move.secondZoneId));
+                zoneIdAroundInputInteger.add(move.secondZoneId);
+            }
+            if (move.secondZoneId == inputZoneId) {
+                zoneAroundInputZone.add(this.findZoneWithId(board, move.firstZoneId));
+                zoneIdAroundInputInteger.add(move.firstZoneId);
+            }
+        }
+        return zoneAroundInputZone;
+    }
+
+    public Zone findZoneWithId(Board board, int zoneId) {
+        for (int i = 0; i < board.getZoneList().size(); i++) {
+            if (board.getZoneList().get(i).getzId() == zoneId) {
+                return board.getZoneList().get(i);
+            }
+        }
+        return new Zone();
+    }
+
+    public int findMyBaseZoneId(Board board, int myId) {
+        for (Zone zone: board.getZoneList()) {
+            if (zone.ownerId == myId) {
+                return zone.getzId();
+            }
+        }
+        return -1;
+    }
+
+    public int findOppBAseZoneId(Board board, int oppId) {
+        for (Zone zone: board.getZoneList()) {
+            if (zone.ownerId == oppId) {
+                return zone.getzId();
+            }
+        }
+        return -1;
+    }
+
+    public int findOppId(int myId) {
+        if (myId == 0) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    public List<Zone> findPlatinumOnZoneList(List<Zone> inputListZone) {
+        List<Zone> platinumZoneList = new ArrayList<>();
+        for (Zone zone: inputListZone ) {
+            if (zone.platinum > 0) {
+                platinumZoneList.add(zone);
+            }
+        }
+        return platinumZoneList;
     }
 }
 class Zone {

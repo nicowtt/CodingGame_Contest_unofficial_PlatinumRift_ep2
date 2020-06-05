@@ -1,5 +1,4 @@
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Auto-generated code below aims at helping you parse
@@ -8,37 +7,42 @@ import java.util.stream.Collectors;
 class Player {
     Board board;
     Zone zone;
+    MoveObj moveObj;
+    Utils utils;
+    Move move;
 
     public static void main(String args[]) {
         new Player().run();
     }
     public void run() {
+        int turnCount = 0;
         Map<Integer, Integer> moveZone = new HashMap<>();
         List<Zone> zoneList = new ArrayList<>();
-        board = new Board();
+        List<MoveObj> moveObjList = new ArrayList<>();
+        utils = new Utils();
+        move = new Move();
 
         Scanner in = new Scanner(System.in);
         int playerCount = in.nextInt(); // the amount of players (always 2)
         int myId = in.nextInt(); // my player ID (0 or 1)
         int zoneCount = in.nextInt(); // the amount of zones on the map
         int linkCount = in.nextInt(); // the amount of links between all zones
-        board.setZoneCount(zoneCount);
-        board.setLinkCount(linkCount);
         for (int i = 0; i < zoneCount; i++) {
             int zoneId = in.nextInt(); // this zone's ID (between 0 and zoneCount-1)
             int platinumSource = in.nextInt(); // Because of the fog, will always be 0
-
         }
 
         for (int i = 0; i < linkCount; i++) {
             int zone1 = in.nextInt();
             int zone2 = in.nextInt();
-            moveZone.put(zone1, zone2);
+            moveObj = new MoveObj(zone1, zone2);
+            moveObjList.add(moveObj);
         }
-        board.setMoveZoneMap(moveZone);
+        board = new Board(zoneCount, linkCount, moveObjList );
 
         // game loop
         while (true) {
+            turnCount++;
             int myPlatinum = in.nextInt(); // your available Platinum
             for (int i = 0; i < zoneCount; i++) {
                 int zId = in.nextInt(); // this zone's ID
@@ -51,27 +55,20 @@ class Player {
                 zoneList.add(zone);
             }
             board.setZoneList(zoneList);
-
-            // find where my pod are
-            List<Zone> myPodPresence = board.getZoneList().stream()
-                    .filter(z -> z.ownerId == myId)
-                    .collect(Collectors.toList());
-            System.err.println("pod presence list :" + myPodPresence.toString());
-
-            // try to write my first move
-            // todo est ce qu'il y a un lien avec la zone d'a coté?
-            Map<Integer, Integer> possibleMove = board.getMoveZoneMap();
-            Integer firstMove = possibleMove.get(myPodPresence.get(0).getzId());
-            System.err.println("possible first move:" + firstMove);
-
-
-
-            // Write an action using System.out.println()
-            // To debug: System.err.println("Debug messages...");
+            if (turnCount == 1) { // search for first move
+                int myZoneBaseId = utils.findMyBaseZoneId(board, myId);
+                int oppZoneBasId = utils.findOppBAseZoneId(board, utils.findOppId(myId));
+                board.setMyBaseZoneId(myZoneBaseId);
+                board.setOppBAseZoneId(oppZoneBasId);
+            }
 
 
             // first line for movement commands, second line no longer used (see the protocol in the statement for details)
-            System.out.println("10 " + myPodPresence.get(0).getzId() + " " + firstMove);
+            if (turnCount == 1) {
+                System.out.println(move.firstMove(board));
+            } else {
+                System.out.println("WAIT");
+            }
             System.out.println("WAIT");
         }
     }
