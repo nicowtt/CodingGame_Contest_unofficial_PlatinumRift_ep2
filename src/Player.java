@@ -25,6 +25,7 @@ class Player {
         Scanner in = new Scanner(System.in);
         int playerCount = in.nextInt(); // the amount of players (always 2)
         int myId = in.nextInt(); // my player ID (0 or 1)
+        System.err.println("myId:" + myId);
         int zoneCount = in.nextInt(); // the amount of zones on the map
         int linkCount = in.nextInt(); // the amount of links between all zones
         for (int i = 0; i < zoneCount; i++) {
@@ -55,6 +56,8 @@ class Player {
                 zoneList.add(zone);
             }
             board.setZoneList(zoneList);
+            zoneList = new ArrayList<>();
+
             if (turnCount == 1) { // search for first move
                 int myZoneBaseId = utils.findMyBaseZoneId(board, myId);
                 int oppZoneBasId = utils.findOppBAseZoneId(board, utils.findOppId(myId));
@@ -62,12 +65,11 @@ class Player {
                 board.setOppBAseZoneId(oppZoneBasId);
             }
 
-
             // first line for movement commands, second line no longer used (see the protocol in the statement for details)
             if (turnCount == 1) {
                 System.out.println(move.firstMove(board));
             } else {
-                System.out.println("WAIT");
+                System.out.println(move.moveIA1(board, myId));
             }
             System.out.println("WAIT");
         }

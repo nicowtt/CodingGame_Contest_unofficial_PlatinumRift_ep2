@@ -18,15 +18,6 @@ class Utils {
         return zoneAroundInputZone;
     }
 
-    public Zone findZoneWithId(Board board, int zoneId) {
-        for (int i = 0; i < board.getZoneList().size(); i++) {
-            if (board.getZoneList().get(i).getzId() == zoneId) {
-                return board.getZoneList().get(i);
-            }
-        }
-        return new Zone();
-    }
-
     public int findMyBaseZoneId(Board board, int myId) {
         for (Zone zone: board.getZoneList()) {
             if (zone.ownerId == myId) {
@@ -61,5 +52,41 @@ class Utils {
             }
         }
         return platinumZoneList;
+    }
+
+    public List<Zone> findPodZonesList(Board board, int myId) {
+        List<Zone> podZonesList = new ArrayList<>();
+
+        // find zone of pod
+        for (Zone zonePods: board.getZoneList() ) {
+            if (myId == 0) {
+                if (zonePods.getPodsP0() > 0) {
+                    podZonesList.add(zonePods);
+                }
+            } else {
+                if (zonePods.getPodsP1() > 0) {
+                    podZonesList.add(zonePods);
+                }
+            }
+        }
+        return podZonesList;
+    }
+
+    public Zone findZoneWithId(Board board, int zoneId) {
+        return board.getZoneList().stream()
+                .filter(zone -> zone.getzId() == zoneId)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public int findNbrOfMyPodOnZone(Zone inputZone, int myId) {
+
+        if (myId == 0) {
+            System.err.println("test on zone(pass0): " + inputZone.toString());
+            return inputZone.getPodsP0();
+        } else {
+            System.err.println("test on zone(pass1): " + inputZone.toString());
+            return inputZone.getPodsP1();
+        }
     }
 }

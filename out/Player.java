@@ -1,7 +1,10 @@
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,18 +90,44 @@ class Move {
         int myBaseId = board.getMyBaseZoneId();
         int moveZoneId = -1;
         List<Zone> zonesAroundMyBase = utils.findZonesAroundZone(board.getMovePossiblity(), board.getMyBaseZoneId(), board);
-        for (Zone zone: zonesAroundMyBase ) { System.err.println("posibility firstMove : " + zone.getzId()); }
+//        for (Zone zone: zonesAroundMyBase ) { System.err.println("posibility firstMove : " + zone.getzId()); }
 
         List<Zone> platinumZonePossibility = utils.findPlatinumOnZoneList(zonesAroundMyBase);
-        for (Zone zone: platinumZonePossibility ) { System.err.println("posibility of platinum zone : " + zone.getzId()); }
+//        for (Zone zone: platinumZonePossibility ) { System.err.println("posibility of platinum zone : " + zone.getzId()); }
 
         if (!platinumZonePossibility.isEmpty()) {
             moveZoneId = platinumZonePossibility.get(0).getzId();
         } else {
             moveZoneId = zonesAroundMyBase.get(0).getzId();
         }
-    return "10 " + myBaseId + " " + moveZoneId;
+        return "10 " + myBaseId + " " + moveZoneId;
     }
+
+    public String moveIA1(Board board, int myId) {
+        String move = "";
+        Random rand = new Random();
+        List<Zone> podZones = utils.findPodZonesList(board, myId);
+
+        for (Zone podZone: podZones ) {
+            int moveZoneId = -1;
+
+            List<Zone> zonesAroundPodZones = utils.findZonesAroundZone(board.getMovePossiblity(), podZone.getzId(), board);
+//            for (Zone zone: zonesAroundPodZones ) { System.err.println("posibility podZone" + podZone.getzId() + ": " + zone.getzId()); }
+            int max = zonesAroundPodZones.size() - 1;
+            int min = 0;
+            int randomNum = rand.nextInt((max - min) + 1) + min;
+
+            moveZoneId = zonesAroundPodZones.get(randomNum).getzId();
+            // todo try to remove bug cummul de pod zone avec 10 pods dessus
+            // todo try to avoid already pass zone
+
+            int nbrOfPodOnZone = utils.findNbrOfMyPodOnZone(podZone, myId);
+            move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveZoneId + " ";
+        }
+        System.err.println(move);
+        return move.trim();
+    }
+
 }
 class MoveObj {
 
@@ -137,6 +166,7 @@ class Player {
         Scanner in = new Scanner(System.in);
         int playerCount = in.nextInt(); // the amount of players (always 2)
         int myId = in.nextInt(); // my player ID (0 or 1)
+        System.err.println("myId:" + myId);
         int zoneCount = in.nextInt(); // the amount of zones on the map
         int linkCount = in.nextInt(); // the amount of links between all zones
         for (int i = 0; i < zoneCount; i++) {
@@ -167,6 +197,8 @@ class Player {
                 zoneList.add(zone);
             }
             board.setZoneList(zoneList);
+            zoneList = new ArrayList<>();
+
             if (turnCount == 1) { // search for first move
                 int myZoneBaseId = utils.findMyBaseZoneId(board, myId);
                 int oppZoneBasId = utils.findOppBAseZoneId(board, utils.findOppId(myId));
@@ -174,12 +206,11 @@ class Player {
                 board.setOppBAseZoneId(oppZoneBasId);
             }
 
-
             // first line for movement commands, second line no longer used (see the protocol in the statement for details)
             if (turnCount == 1) {
                 System.out.println(move.firstMove(board));
             } else {
-                System.out.println("WAIT");
+                System.out.println(move.moveIA1(board, myId));
             }
             System.out.println("WAIT");
         }
@@ -201,15 +232,6 @@ class Utils {
             }
         }
         return zoneAroundInputZone;
-    }
-
-    public Zone findZoneWithId(Board board, int zoneId) {
-        for (int i = 0; i < board.getZoneList().size(); i++) {
-            if (board.getZoneList().get(i).getzId() == zoneId) {
-                return board.getZoneList().get(i);
-            }
-        }
-        return new Zone();
     }
 
     public int findMyBaseZoneId(Board board, int myId) {
@@ -246,6 +268,42 @@ class Utils {
             }
         }
         return platinumZoneList;
+    }
+
+    public List<Zone> findPodZonesList(Board board, int myId) {
+        List<Zone> podZonesList = new ArrayList<>();
+
+        // find zone of pod
+        for (Zone zonePods: board.getZoneList() ) {
+            if (myId == 0) {
+                if (zonePods.getPodsP0() > 0) {
+                    podZonesList.add(zonePods);
+                }
+            } else {
+                if (zonePods.getPodsP1() > 0) {
+                    podZonesList.add(zonePods);
+                }
+            }
+        }
+        return podZonesList;
+    }
+
+    public Zone findZoneWithId(Board board, int zoneId) {
+        return board.getZoneList().stream()
+                .filter(zone -> zone.getzId() == zoneId)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public int findNbrOfMyPodOnZone(Zone inputZone, int myId) {
+
+        if (myId == 0) {
+            System.err.println("test on zone(pass0): " + inputZone.toString());
+            return inputZone.getPodsP0();
+        } else {
+            System.err.println("test on zone(pass1): " + inputZone.toString());
+            return inputZone.getPodsP1();
+        }
     }
 }
 class Zone {
