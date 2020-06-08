@@ -1,4 +1,6 @@
+import javax.swing.text.html.Option;
 import java.util.*;
+import java.util.stream.Collectors;
 
 class Utils {
 
@@ -102,9 +104,9 @@ class Utils {
         List<Integer> finalList = new ArrayList<>();
 
         if (idZoneLastVisitedList != null) {
-            System.err.println("last visited: " + idZoneLastVisitedList.toString());
+//            System.err.println("last visited: " + idZoneLastVisitedList.toString());
         }
-        System.err.println("input list posibility: " + inputZone.toString());
+//        System.err.println("input list posibility: " + inputZone.toString());
 
         Boolean same = false;
 
@@ -128,5 +130,14 @@ class Utils {
 
 
         return finalList;
+    }
+
+    public Optional<Integer> checkIfOppBaseIsOnList(List<Zone> inputzoneList, int oppBase) {
+        Optional<Integer> result = inputzoneList.stream()
+                .filter(zone -> zone.getzId().equals(oppBase))
+                .findFirst()
+                .map(Zone::getzId);
+
+        return result;
     }
 }

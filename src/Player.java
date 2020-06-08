@@ -64,7 +64,7 @@ class Player {
                 board.setMyBaseZoneId(myZoneBaseId);
                 board.setOppBAseZoneId(oppZoneBasId);
             }
-            if (turnCount % 5 == 0) { // only for moveIA2
+            if (turnCount % 10 == 0) { // only for moveIA2
                 List<Integer> newList = new ArrayList<>();
                 board.setZoneVisited(newList);
             }

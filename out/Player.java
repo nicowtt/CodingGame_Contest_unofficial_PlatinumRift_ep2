@@ -1,13 +1,12 @@
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.*;
+import javax.swing.text.html.Option;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.List;
 
 class Board {
@@ -108,6 +107,7 @@ class Move {
         int moveZoneId = -1;
         List<Zone> zonesAroundMyBase = utils.findZonesAroundZone(board.getMovePossiblity(), board.getMyBaseZoneId(), board);
         List<Zone> platinumZonePossibility = utils.findPlatinumOnZoneList(zonesAroundMyBase);
+
         if (!platinumZonePossibility.isEmpty()) {
             moveZoneId = platinumZonePossibility.get(0).getzId();
             board.addZoneVisited(platinumZonePossibility.get(0).getzId());
@@ -115,7 +115,6 @@ class Move {
         else {
             moveZoneId = zonesAroundMyBase.get(0).getzId();
             board.addZoneVisited(zonesAroundMyBase.get(0).getzId());
-
         }
         return "10 " + myBaseId + " " + moveZoneId;
     }
@@ -162,22 +161,26 @@ class Move {
         for (Zone podZone: podZones ) {
             List<Zone> zonesAroundPodZones = utils.findZonesAroundZone(board.getMovePossiblity(), podZone.getzId(), board);
             List<Integer> zoneAroundPodsWithoutAlreadyVisited = utils.removeLastVisited(zonesAroundPodZones, board.getZoneVisited());
+            int nbrOfPodOnZone = utils.findNbrOfMyPodOnZone(podZone, myId);
 
-            if (zoneAroundPodsWithoutAlreadyVisited.size() > 0 ) {
-                int randomNbr = utils.getRandomInt(0, zoneAroundPodsWithoutAlreadyVisited.size() - 1);
-                int moveToZoneFiltered = zoneAroundPodsWithoutAlreadyVisited.get(randomNbr);
-                int nbrOfPodOnZone = utils.findNbrOfMyPodOnZone(podZone, myId);
-                move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZoneFiltered + " ";
-                board.addZoneVisited(moveToZoneFiltered);
-                System.err.println("passage exploration");
+            Optional<Integer> oppBaseIsOnList = utils.checkIfOppBaseIsOnList(zonesAroundPodZones, board.getOppBAseZoneId());
+            if (oppBaseIsOnList.isPresent()) {
+                System.err.println("passage opp found!");
+                move += nbrOfPodOnZone + " " + podZone.getzId() + " " + board.getOppBAseZoneId() + " ";
             } else {
-                int randomNbr = utils.getRandomInt(0, zonesAroundPodZones.size() - 1);
-                int moveToZone = zonesAroundPodZones.get(randomNbr).getzId();
-                int nbrOfPodOnZone = utils.findNbrOfMyPodOnZone(podZone, myId);
-                move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZone + " ";
-                board.addZoneVisited(moveToZone);
+                if (zoneAroundPodsWithoutAlreadyVisited.size() > 0 ) {
+                    int randomNbr = utils.getRandomInt(0, zoneAroundPodsWithoutAlreadyVisited.size() - 1);
+                    int moveToZoneFiltered = zoneAroundPodsWithoutAlreadyVisited.get(randomNbr);
+                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZoneFiltered + " ";
+                    board.addZoneVisited(moveToZoneFiltered);
+                    System.err.println("passage exploration");
+                } else {
+                    int randomNbr = utils.getRandomInt(0, zonesAroundPodZones.size() - 1);
+                    int moveToZone = zonesAroundPodZones.get(randomNbr).getzId();
+                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZone + " ";
+                    board.addZoneVisited(moveToZone);
+                }
             }
-
             // todo find better path
 
 
@@ -263,7 +266,7 @@ class Player {
                 board.setMyBaseZoneId(myZoneBaseId);
                 board.setOppBAseZoneId(oppZoneBasId);
             }
-            if (turnCount % 5 == 0) { // only for moveIA2
+            if (turnCount % 10 == 0) { // only for moveIA2
                 List<Integer> newList = new ArrayList<>();
                 board.setZoneVisited(newList);
             }
@@ -381,9 +384,9 @@ class Utils {
         List<Integer> finalList = new ArrayList<>();
 
         if (idZoneLastVisitedList != null) {
-            System.err.println("last visited: " + idZoneLastVisitedList.toString());
+//            System.err.println("last visited: " + idZoneLastVisitedList.toString());
         }
-        System.err.println("input list posibility: " + inputZone.toString());
+//        System.err.println("input list posibility: " + inputZone.toString());
 
         Boolean same = false;
 
@@ -407,6 +410,15 @@ class Utils {
 
 
         return finalList;
+    }
+
+    public Optional<Integer> checkIfOppBaseIsOnList(List<Zone> inputzoneList, int oppBase) {
+        Optional<Integer> result = inputzoneList.stream()
+                .filter(zone -> zone.getzId().equals(oppBase))
+                .findFirst()
+                .map(Zone::getzId);
+
+        return result;
     }
 }
 
