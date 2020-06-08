@@ -1,5 +1,5 @@
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
 class Utils {
 
     public List<Zone> findZonesAroundZone(List<MoveObj> moveObjList, int inputZoneId, Board board) {
@@ -82,11 +82,51 @@ class Utils {
     public int findNbrOfMyPodOnZone(Zone inputZone, int myId) {
 
         if (myId == 0) {
-            System.err.println("test on zone(pass0): " + inputZone.toString());
+            System.err.println("Pod is on zone(player:0): " + inputZone.toString());
             return inputZone.getPodsP0();
         } else {
-            System.err.println("test on zone(pass1): " + inputZone.toString());
+            System.err.println("Pod is on zone(player1): " + inputZone.toString());
             return inputZone.getPodsP1();
         }
+    }
+
+    public int getRandomInt(int min, int max) {
+        Random rand = new Random();
+        return  rand.nextInt((max - min) + 1) + min;
+    }
+
+    public List<Integer> removeLastVisited(List<Zone> inputZoneList, List<Integer> idZoneLastVisitedList) {
+        List<Integer> inputZone = new ArrayList<>();
+        for (Zone zone: inputZoneList) { inputZone.add(zone.getzId()); }
+        Set<Integer> finalListSet = new HashSet<>();
+        List<Integer> finalList = new ArrayList<>();
+
+        if (idZoneLastVisitedList != null) {
+            System.err.println("last visited: " + idZoneLastVisitedList.toString());
+        }
+        System.err.println("input list posibility: " + inputZone.toString());
+
+        Boolean same = false;
+
+        for (int i = 0; i < inputZone.size(); i++) {
+            for (int j = 0; j < idZoneLastVisitedList.size(); j++) {
+                if (inputZone.get(i).equals(idZoneLastVisitedList.get(j))) {
+                    same = true;
+                    break;
+                }
+            }
+            if (!same) {
+                finalListSet.add(inputZone.get(i));
+            }
+            same = false;
+        }
+
+        System.err.println("final: " + finalListSet.toString());
+        for (Integer i : finalListSet) {
+            finalList.add(i);
+        }
+
+
+        return finalList;
     }
 }

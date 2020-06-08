@@ -39,7 +39,7 @@ class Player {
             moveObj = new MoveObj(zone1, zone2);
             moveObjList.add(moveObj);
         }
-        board = new Board(zoneCount, linkCount, moveObjList );
+        board = new Board(zoneCount, linkCount, moveObjList, new ArrayList<>());
 
         // game loop
         while (true) {
@@ -64,12 +64,16 @@ class Player {
                 board.setMyBaseZoneId(myZoneBaseId);
                 board.setOppBAseZoneId(oppZoneBasId);
             }
+            if (turnCount % 5 == 0) { // only for moveIA2
+                List<Integer> newList = new ArrayList<>();
+                board.setZoneVisited(newList);
+            }
 
             // first line for movement commands, second line no longer used (see the protocol in the statement for details)
             if (turnCount == 1) {
                 System.out.println(move.firstMove(board));
             } else {
-                System.out.println(move.moveIA1(board, myId));
+                System.out.println(move.moveIA2(board, myId));
             }
             System.out.println("WAIT");
         }
