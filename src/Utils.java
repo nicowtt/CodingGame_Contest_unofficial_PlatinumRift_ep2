@@ -182,7 +182,7 @@ class Utils {
             Node current = queue.get(0);
             queue.remove(0);
 
-            if (current.getId() == to) {
+            if (current.getId().equals(to)) {
                 return current;
             }
 
