@@ -4,9 +4,7 @@ import java.util.Map;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.*;
-import javax.swing.text.html.Option;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.List;
 
 class Board {
@@ -17,6 +15,7 @@ class Board {
     int myBaseZoneId;
     int oppBAseZoneId;
     List<Integer> zoneVisited;
+    List<Integer> pathToOpp;
 
     // constructor
     public Board() {
@@ -84,6 +83,14 @@ class Board {
 
     public void setZoneVisited(List<Integer> zoneVisited) {
         this.zoneVisited = zoneVisited;
+    }
+
+    public List<Integer> getPathToOpp() {
+        return pathToOpp;
+    }
+
+    public void setPathToOpp(List<Integer> inputPathList) {
+        this.pathToOpp = inputPathList;
     }
 
     // methods
@@ -182,7 +189,7 @@ class Move {
                 }
             }
             // todo find better path
-
+            System.err.println(board.getPathToOpp().toString());
 
         }
         System.err.println(move);
@@ -201,6 +208,46 @@ class MoveObj {
         this.secondZoneId = secondZoneId;
     }
 }
+ class Node {
+    Integer id;
+    Node parent;
+
+    // constructor
+     public Node() {};
+
+     public Node(Integer id, Node parent) {
+         this.id = id;
+         this.parent = parent;
+     }
+
+     //getters and setters
+
+     public Integer getId() {
+         return id;
+     }
+
+     public void setId(Integer id) {
+         this.id = id;
+     }
+
+     public Node getParent() {
+         return parent;
+     }
+
+     public void setParent(Node parent) {
+         this.parent = parent;
+     }
+
+     //to string
+
+     @Override
+     public String toString() {
+         return "Node{" +
+                 "id=" + id +
+                 ", parent=" + parent +
+                 '}';
+     }
+ }
 
 /**
  * Auto-generated code below aims at helping you parse
@@ -265,6 +312,15 @@ class Player {
                 int oppZoneBasId = utils.findOppBAseZoneId(board, utils.findOppId(myId));
                 board.setMyBaseZoneId(myZoneBaseId);
                 board.setOppBAseZoneId(oppZoneBasId);
+                // find opp path base with BFS and store on Board
+                List<Integer> oppPathList = new ArrayList<>();
+                Node result = utils.BFS(board.getMyBaseZoneId(), board.getOppBAseZoneId(), board);
+                while (result != null) {
+                    oppPathList.add(result.getId());
+                    result = result.parent;
+                }
+                Collections.reverse(oppPathList);
+                board.setPathToOpp(oppPathList);
             }
             if (turnCount % 10 == 0) { // only for moveIA2
                 List<Integer> newList = new ArrayList<>();
@@ -298,6 +354,24 @@ class Utils {
             }
         }
         return zoneAroundInputZone;
+    }
+
+    public List<Integer> getIdZonesAroundZone(List<MoveObj> moveObjList, int inputZoneId, Board board) {
+        List<Integer> zoneIdAroundInputInteger = new ArrayList<>();
+        List<Zone> zoneAroundInputZone = new ArrayList<>();
+
+        for (MoveObj move: moveObjList) {
+            if (move.firstZoneId == inputZoneId ) {
+                zoneAroundInputZone.add(this.findZoneWithId(board, move.secondZoneId));
+                zoneIdAroundInputInteger.add(move.secondZoneId);
+            }
+            if (move.secondZoneId == inputZoneId) {
+                zoneAroundInputZone.add(this.findZoneWithId(board, move.firstZoneId));
+                zoneIdAroundInputInteger.add(move.firstZoneId);
+            }
+        }
+
+        return zoneIdAroundInputInteger;
     }
 
     public int findMyBaseZoneId(Board board, int myId) {
@@ -403,7 +477,7 @@ class Utils {
             same = false;
         }
 
-        System.err.println("final: " + finalListSet.toString());
+//        System.err.println("final: " + finalListSet.toString());
         for (Integer i : finalListSet) {
             finalList.add(i);
         }
@@ -419,6 +493,32 @@ class Utils {
                 .map(Zone::getzId);
 
         return result;
+    }
+
+    public Node BFS(Integer from, Integer to, Board board) {
+        Set<Integer> discovered = new HashSet<>();
+        List<Node> queue = new ArrayList<>();
+        queue.add(new Node(from, null));
+        discovered.add(from);
+
+        while (queue.size() > 0) {
+            Node current = queue.get(0);
+            queue.remove(0);
+
+            if (current.getId() == to) {
+                return current;
+            }
+
+            List<Integer> neighbor = this.getIdZonesAroundZone(board.getMovePossiblity(), current.getId(), board);
+            for (int i = 0; i < neighbor.size(); i++) {
+                if (!discovered.contains(neighbor)) {
+                    discovered.add(neighbor.get(i));
+                    Node node = new Node(neighbor.get(i), current);
+                    queue.add(node);
+                }
+            }
+        }
+        return null;
     }
 }
 

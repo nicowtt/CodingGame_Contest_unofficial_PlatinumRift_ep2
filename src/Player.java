@@ -63,6 +63,15 @@ class Player {
                 int oppZoneBasId = utils.findOppBAseZoneId(board, utils.findOppId(myId));
                 board.setMyBaseZoneId(myZoneBaseId);
                 board.setOppBAseZoneId(oppZoneBasId);
+                // find opp path base with BFS and store on Board
+                List<Integer> oppPathList = new ArrayList<>();
+                Node result = utils.BFS(board.getMyBaseZoneId(), board.getOppBAseZoneId(), board);
+                while (result != null) {
+                    oppPathList.add(result.getId());
+                    result = result.parent;
+                }
+                Collections.reverse(oppPathList);
+                board.setPathToOpp(oppPathList);
             }
             if (turnCount % 10 == 0) { // only for moveIA2
                 List<Integer> newList = new ArrayList<>();

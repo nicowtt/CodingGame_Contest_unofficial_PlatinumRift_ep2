@@ -10,6 +10,7 @@ class Board {
     int myBaseZoneId;
     int oppBAseZoneId;
     List<Integer> zoneVisited;
+    List<Integer> pathToOpp;
 
     // constructor
     public Board() {
@@ -77,6 +78,14 @@ class Board {
 
     public void setZoneVisited(List<Integer> zoneVisited) {
         this.zoneVisited = zoneVisited;
+    }
+
+    public List<Integer> getPathToOpp() {
+        return pathToOpp;
+    }
+
+    public void setPathToOpp(List<Integer> inputPathList) {
+        this.pathToOpp = inputPathList;
     }
 
     // methods
