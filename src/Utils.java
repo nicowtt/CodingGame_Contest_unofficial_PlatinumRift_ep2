@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.stream.Collectors;
 
 class Utils {
 
@@ -18,22 +19,36 @@ class Utils {
         return zoneAroundInputZone;
     }
 
-    public List<Integer> getIdZonesAroundZone(List<MoveObj> moveObjList, int inputZoneId, Board board) {
+    public List<Integer> getIdZonesAroundZone(List<MoveObj> moveObjList, int inputZoneId) {
         List<Integer> zoneIdAroundInputInteger = new ArrayList<>();
-        List<Zone> zoneAroundInputZone = new ArrayList<>();
 
         for (MoveObj move: moveObjList) {
             if (move.firstZoneId == inputZoneId ) {
-                zoneAroundInputZone.add(this.findZoneWithId(board, move.secondZoneId));
                 zoneIdAroundInputInteger.add(move.secondZoneId);
             }
             if (move.secondZoneId == inputZoneId) {
-                zoneAroundInputZone.add(this.findZoneWithId(board, move.firstZoneId));
                 zoneIdAroundInputInteger.add(move.firstZoneId);
             }
         }
 
         return zoneIdAroundInputInteger;
+    }
+
+    public void recordNeighborOnZone(Board board) {
+        List<MoveObj> moveObjList = board.getMovePossiblity();
+        List<Zone> zoneList = board.getZoneList();
+        for (Zone zone: zoneList) {
+            for (MoveObj move: moveObjList) {
+                if (move.firstZoneId == zone.getzId() ) {
+                    board.getZoneList().get(zone.getzId()).addNeighbor(move.secondZoneId);
+                }
+                if (move.secondZoneId == zone.getzId()) {
+                    board.getZoneList().get(zone.getzId()).addNeighbor(move.firstZoneId);
+                }
+            }
+        }
+
+
     }
 
     public int findMyBaseZoneId(Board board, int myId) {
@@ -171,12 +186,11 @@ class Utils {
                 return current;
             }
 
-            List<Integer> neighbor = this.getIdZonesAroundZone(board.getMovePossiblity(), current.getId(), board);
+            List<Integer> neighbor = board.getZoneList().get(current.getId()).getNeighbor();
             for (int i = 0; i < neighbor.size(); i++) {
-                if (!discovered.contains(neighbor)) {
+                if (!discovered.contains(neighbor.get(i))) {
                     discovered.add(neighbor.get(i));
-                    Node node = new Node(neighbor.get(i), current);
-                    queue.add(node);
+                    queue.add(new Node(neighbor.get(i), current));
                 }
             }
         }

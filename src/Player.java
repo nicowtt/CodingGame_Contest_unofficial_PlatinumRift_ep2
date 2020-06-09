@@ -1,3 +1,5 @@
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -52,7 +54,7 @@ class Player {
                 int podsP1 = in.nextInt(); // player 1's PODs on this zone
                 int visible = in.nextInt(); // 1 if one of your units can see this tile, else 0
                 int platinum = in.nextInt(); // the amount of Platinum this zone can provide (0 if hidden by fog)
-                zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum);
+                zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum, new ArrayList<>());
                 zoneList.add(zone);
             }
             board.setZoneList(zoneList);
@@ -63,7 +65,10 @@ class Player {
                 int oppZoneBasId = utils.findOppBAseZoneId(board, utils.findOppId(myId));
                 board.setMyBaseZoneId(myZoneBaseId);
                 board.setOppBAseZoneId(oppZoneBasId);
+                utils.recordNeighborOnZone(board);
+
                 // find opp path base with BFS and store on Board
+                Instant start = Instant.now();
                 List<Integer> oppPathList = new ArrayList<>();
                 Node result = utils.BFS(board.getMyBaseZoneId(), board.getOppBAseZoneId(), board);
                 while (result != null) {
@@ -72,6 +77,8 @@ class Player {
                 }
                 Collections.reverse(oppPathList);
                 board.setPathToOpp(oppPathList);
+                Instant end = Instant.now();
+                System.err.println("BFS time" + Duration.between(start, end));
             }
             if (turnCount % 10 == 0) { // only for moveIA2
                 List<Integer> newList = new ArrayList<>();

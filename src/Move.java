@@ -91,7 +91,7 @@ class Move {
                 }
             }
             // todo find better path
-            System.err.println(board.getPathToOpp().toString());
+            System.err.println("path to opp:" + board.getPathToOpp().toString());
 
         }
         System.err.println(move);

@@ -7,18 +7,20 @@ class Zone {
     Integer podsP1;
     Integer visible;
     Integer platinum;
+    List<Integer> neighbor;
 
     // constructor
     public Zone() {
     }
 
-    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum) {
+    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum, List<Integer> neighbor) {
         this.zId = zId;
         this.ownerId = ownerId;
         this.podsP0 = podsP0;
         this.podsP1 = podsP1;
         this.visible = visible;
         this.platinum = platinum;
+        this.neighbor = neighbor;
     }
 
     // getters and setters
@@ -70,6 +72,14 @@ class Zone {
         this.platinum = platinum;
     }
 
+    public List<Integer> getNeighbor() {
+        return neighbor;
+    }
+
+    public void setNeighbor(List<Integer> neighbor) {
+        this.neighbor = neighbor;
+    }
+
     // to string
     @Override
     public String toString() {
@@ -80,6 +90,11 @@ class Zone {
                 ", podsP1=" + podsP1 +
                 ", visible=" + visible +
                 ", platinum=" + platinum +
+                ", neighbor=" + neighbor +
                 '}';
+    }
+
+    public void addNeighbor(Integer inputNbr) {
+        neighbor.add(inputNbr);
     }
 }
