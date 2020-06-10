@@ -1,4 +1,5 @@
 import java.util.List;
+import java.util.Map;
 
 class Zone {
     Integer zId;
@@ -8,12 +9,13 @@ class Zone {
     Integer visible;
     Integer platinum;
     List<Integer> neighbor;
+    Map<Integer, Integer> distance;
 
     // constructor
     public Zone() {
     }
 
-    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum, List<Integer> neighbor) {
+    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum, List<Integer> neighbor, Map<Integer, Integer> distance) {
         this.zId = zId;
         this.ownerId = ownerId;
         this.podsP0 = podsP0;
@@ -21,6 +23,7 @@ class Zone {
         this.visible = visible;
         this.platinum = platinum;
         this.neighbor = neighbor;
+        this.distance = distance;
     }
 
     // getters and setters
@@ -80,6 +83,14 @@ class Zone {
         this.neighbor = neighbor;
     }
 
+    public Map<Integer, Integer> getDistance() {
+        return distance;
+    }
+
+    public void setDistance(Map<Integer, Integer> distance) {
+        this.distance = distance;
+    }
+
     // to string
     @Override
     public String toString() {
@@ -91,10 +102,15 @@ class Zone {
                 ", visible=" + visible +
                 ", platinum=" + platinum +
                 ", neighbor=" + neighbor +
+                ", distance=" + distance +
                 '}';
     }
 
     public void addNeighbor(Integer inputNbr) {
         neighbor.add(inputNbr);
+    }
+
+    public void addDistance(Integer to, Integer distanceInput) {
+        distance.put(to, distanceInput);
     }
 }

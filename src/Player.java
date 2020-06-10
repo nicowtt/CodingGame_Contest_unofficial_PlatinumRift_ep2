@@ -54,7 +54,7 @@ class Player {
                 int podsP1 = in.nextInt(); // player 1's PODs on this zone
                 int visible = in.nextInt(); // 1 if one of your units can see this tile, else 0
                 int platinum = in.nextInt(); // the amount of Platinum this zone can provide (0 if hidden by fog)
-                zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum, new ArrayList<>());
+                zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum, new ArrayList<>(), new HashMap<>());
                 zoneList.add(zone);
             }
             board.setZoneList(zoneList);
@@ -79,6 +79,21 @@ class Player {
                 board.setPathToOpp(oppPathList);
                 Instant end = Instant.now();
                 System.err.println("BFS time" + Duration.between(start, end));
+
+                // find distances from myBase to every other zone
+                Instant start2 = Instant.now();
+                for (int i = 0; i < board.getZoneList().size(); i++) {
+                    List<Integer> distanceResult = new ArrayList<>();
+                    Node distanceZone = utils.BFS(board.getMyBaseZoneId(), board.getZoneList().get(i).getzId(), board);
+                    while (distanceZone != null) {
+                        distanceResult.add(distanceZone.getId());
+                        distanceZone = distanceZone.parent;
+                    }
+                    Long distanceLong = distanceResult.stream().count();
+                    board.getZoneList().get(board.getMyBaseZoneId()).addDistance(board.getZoneList().get(i).getzId(), distanceLong.intValue());
+                }
+                Instant end2 = Instant.now();
+                System.err.println("BFS time my base to each zone" + Duration.between(start2, end2));
             }
             if (turnCount % 10 == 0) { // only for moveIA2
                 List<Integer> newList = new ArrayList<>();
@@ -87,7 +102,7 @@ class Player {
 
             // first line for movement commands, second line no longer used (see the protocol in the statement for details)
             if (turnCount == 1) {
-                System.out.println(move.firstMove(board));
+                System.out.println(move.firstMoveIA1and2(board));
             } else {
                 System.out.println(move.moveIA2(board, myId));
             }

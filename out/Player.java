@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.List;
+import java.util.Map;
 
 class Board {
     int zoneCount;
@@ -111,7 +112,31 @@ class Move {
      * @param board
      * @return
      */
-    public String firstMove(Board board) {
+    public String firstMoveIA1and2(Board board) {
+        int myBaseId = board.getMyBaseZoneId();
+        board.addZoneVisited(board.getMyBaseZoneId());
+        int moveZoneId = -1;
+        List<Zone> zonesAroundMyBase = utils.findZonesAroundZone(board.getMovePossiblity(), board.getMyBaseZoneId(), board);
+        List<Zone> platinumZonePossibility = utils.findPlatinumOnZoneList(zonesAroundMyBase);
+
+        if (!platinumZonePossibility.isEmpty()) {
+            moveZoneId = platinumZonePossibility.get(0).getzId();
+            board.addZoneVisited(platinumZonePossibility.get(0).getzId());
+        }
+        else {
+            moveZoneId = zonesAroundMyBase.get(0).getzId();
+            board.addZoneVisited(zonesAroundMyBase.get(0).getzId());
+        }
+        return "10 " + myBaseId + " " + moveZoneId;
+    }
+
+    /**
+     * move 10 pods
+     * choice zone with platinum first
+     * @param board
+     * @return
+     */
+    public String firstMoveIA13(Board board) {
         int myBaseId = board.getMyBaseZoneId();
         board.addZoneVisited(board.getMyBaseZoneId());
         int moveZoneId = -1;
@@ -165,6 +190,45 @@ class Move {
      * @return
      */
     public String moveIA2(Board board, int myId) {
+        String move = "";
+        List<Zone> podZones = utils.findPodZonesList(board, myId);
+
+        for (Zone podZone: podZones ) {
+            List<Zone> zonesAroundPodZones = utils.findZonesAroundZone(board.getMovePossiblity(), podZone.getzId(), board);
+            List<Integer> zoneAroundPodsWithoutAlreadyVisited = utils.removeLastVisited(zonesAroundPodZones, board.getZoneVisited());
+            int nbrOfPodOnZone = utils.findNbrOfMyPodOnZone(podZone, myId);
+
+            Optional<Integer> oppBaseIsOnList = utils.checkIfOppBaseIsOnList(zonesAroundPodZones, board.getOppBAseZoneId());
+            if (oppBaseIsOnList.isPresent()) {
+                System.err.println("passage opp found!");
+                move += nbrOfPodOnZone + " " + podZone.getzId() + " " + board.getOppBAseZoneId() + " ";
+            } else {
+                if (zoneAroundPodsWithoutAlreadyVisited.size() > 0 ) {
+                    int randomNbr = utils.getRandomInt(0, zoneAroundPodsWithoutAlreadyVisited.size() - 1);
+                    int moveToZoneFiltered = zoneAroundPodsWithoutAlreadyVisited.get(randomNbr);
+                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZoneFiltered + " ";
+                    board.addZoneVisited(moveToZoneFiltered);
+                    System.err.println("passage exploration");
+                } else {
+                    int randomNbr = utils.getRandomInt(0, zonesAroundPodZones.size() - 1);
+                    int moveToZone = zonesAroundPodZones.get(randomNbr).getzId();
+                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZone + " ";
+                    board.addZoneVisited(moveToZone);
+                }
+            }
+        }
+        System.err.println(move);
+        return move.trim();
+    }
+
+    /**
+     * I know path from myBase to oppBase
+     *
+     * @param board
+     * @param myId
+     * @return
+     */
+    public String moveIA3(Board board, int myId) {
         String move = "";
         List<Zone> podZones = utils.findPodZonesList(board, myId);
 
@@ -304,7 +368,7 @@ class Player {
                 int podsP1 = in.nextInt(); // player 1's PODs on this zone
                 int visible = in.nextInt(); // 1 if one of your units can see this tile, else 0
                 int platinum = in.nextInt(); // the amount of Platinum this zone can provide (0 if hidden by fog)
-                zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum, new ArrayList<>());
+                zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum, new ArrayList<>(), new HashMap<>());
                 zoneList.add(zone);
             }
             board.setZoneList(zoneList);
@@ -329,6 +393,21 @@ class Player {
                 board.setPathToOpp(oppPathList);
                 Instant end = Instant.now();
                 System.err.println("BFS time" + Duration.between(start, end));
+
+                // find distances from myBase to every other zone
+                Instant start2 = Instant.now();
+                for (int i = 0; i < board.getZoneList().size(); i++) {
+                    List<Integer> distanceResult = new ArrayList<>();
+                    Node distanceZone = utils.BFS(board.getMyBaseZoneId(), board.getZoneList().get(i).getzId(), board);
+                    while (distanceZone != null) {
+                        distanceResult.add(distanceZone.getId());
+                        distanceZone = distanceZone.parent;
+                    }
+                    Long distanceLong = distanceResult.stream().count();
+                    board.getZoneList().get(board.getMyBaseZoneId()).addDistance(board.getZoneList().get(i).getzId(), distanceLong.intValue());
+                }
+                Instant end2 = Instant.now();
+                System.err.println("BFS time my base to each zone" + Duration.between(start2, end2));
             }
             if (turnCount % 10 == 0) { // only for moveIA2
                 List<Integer> newList = new ArrayList<>();
@@ -337,7 +416,7 @@ class Player {
 
             // first line for movement commands, second line no longer used (see the protocol in the statement for details)
             if (turnCount == 1) {
-                System.out.println(move.firstMove(board));
+                System.out.println(move.firstMoveIA1and2(board));
             } else {
                 System.out.println(move.moveIA2(board, myId));
             }
@@ -551,12 +630,13 @@ class Zone {
     Integer visible;
     Integer platinum;
     List<Integer> neighbor;
+    Map<Integer, Integer> distance;
 
     // constructor
     public Zone() {
     }
 
-    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum, List<Integer> neighbor) {
+    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum, List<Integer> neighbor, Map<Integer, Integer> distance) {
         this.zId = zId;
         this.ownerId = ownerId;
         this.podsP0 = podsP0;
@@ -564,6 +644,7 @@ class Zone {
         this.visible = visible;
         this.platinum = platinum;
         this.neighbor = neighbor;
+        this.distance = distance;
     }
 
     // getters and setters
@@ -623,6 +704,14 @@ class Zone {
         this.neighbor = neighbor;
     }
 
+    public Map<Integer, Integer> getDistance() {
+        return distance;
+    }
+
+    public void setDistance(Map<Integer, Integer> distance) {
+        this.distance = distance;
+    }
+
     // to string
     @Override
     public String toString() {
@@ -634,10 +723,15 @@ class Zone {
                 ", visible=" + visible +
                 ", platinum=" + platinum +
                 ", neighbor=" + neighbor +
+                ", distance=" + distance +
                 '}';
     }
 
     public void addNeighbor(Integer inputNbr) {
         neighbor.add(inputNbr);
+    }
+
+    public void addDistance(Integer to, Integer distanceInput) {
+        distance.put(to, distanceInput);
     }
 }

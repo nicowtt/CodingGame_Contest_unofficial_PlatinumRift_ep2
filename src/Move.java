@@ -10,7 +10,31 @@ class Move {
      * @param board
      * @return
      */
-    public String firstMove(Board board) {
+    public String firstMoveIA1and2(Board board) {
+        int myBaseId = board.getMyBaseZoneId();
+        board.addZoneVisited(board.getMyBaseZoneId());
+        int moveZoneId = -1;
+        List<Zone> zonesAroundMyBase = utils.findZonesAroundZone(board.getMovePossiblity(), board.getMyBaseZoneId(), board);
+        List<Zone> platinumZonePossibility = utils.findPlatinumOnZoneList(zonesAroundMyBase);
+
+        if (!platinumZonePossibility.isEmpty()) {
+            moveZoneId = platinumZonePossibility.get(0).getzId();
+            board.addZoneVisited(platinumZonePossibility.get(0).getzId());
+        }
+        else {
+            moveZoneId = zonesAroundMyBase.get(0).getzId();
+            board.addZoneVisited(zonesAroundMyBase.get(0).getzId());
+        }
+        return "10 " + myBaseId + " " + moveZoneId;
+    }
+
+    /**
+     * move 10 pods
+     * choice zone with platinum first
+     * @param board
+     * @return
+     */
+    public String firstMoveIA13(Board board) {
         int myBaseId = board.getMyBaseZoneId();
         board.addZoneVisited(board.getMyBaseZoneId());
         int moveZoneId = -1;
@@ -64,6 +88,45 @@ class Move {
      * @return
      */
     public String moveIA2(Board board, int myId) {
+        String move = "";
+        List<Zone> podZones = utils.findPodZonesList(board, myId);
+
+        for (Zone podZone: podZones ) {
+            List<Zone> zonesAroundPodZones = utils.findZonesAroundZone(board.getMovePossiblity(), podZone.getzId(), board);
+            List<Integer> zoneAroundPodsWithoutAlreadyVisited = utils.removeLastVisited(zonesAroundPodZones, board.getZoneVisited());
+            int nbrOfPodOnZone = utils.findNbrOfMyPodOnZone(podZone, myId);
+
+            Optional<Integer> oppBaseIsOnList = utils.checkIfOppBaseIsOnList(zonesAroundPodZones, board.getOppBAseZoneId());
+            if (oppBaseIsOnList.isPresent()) {
+                System.err.println("passage opp found!");
+                move += nbrOfPodOnZone + " " + podZone.getzId() + " " + board.getOppBAseZoneId() + " ";
+            } else {
+                if (zoneAroundPodsWithoutAlreadyVisited.size() > 0 ) {
+                    int randomNbr = utils.getRandomInt(0, zoneAroundPodsWithoutAlreadyVisited.size() - 1);
+                    int moveToZoneFiltered = zoneAroundPodsWithoutAlreadyVisited.get(randomNbr);
+                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZoneFiltered + " ";
+                    board.addZoneVisited(moveToZoneFiltered);
+                    System.err.println("passage exploration");
+                } else {
+                    int randomNbr = utils.getRandomInt(0, zonesAroundPodZones.size() - 1);
+                    int moveToZone = zonesAroundPodZones.get(randomNbr).getzId();
+                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZone + " ";
+                    board.addZoneVisited(moveToZone);
+                }
+            }
+        }
+        System.err.println(move);
+        return move.trim();
+    }
+
+    /**
+     * I know path from myBase to oppBase
+     *
+     * @param board
+     * @param myId
+     * @return
+     */
+    public String moveIA3(Board board, int myId) {
         String move = "";
         List<Zone> podZones = utils.findPodZonesList(board, myId);
 
