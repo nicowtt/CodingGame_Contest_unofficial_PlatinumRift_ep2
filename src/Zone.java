@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -10,20 +12,22 @@ class Zone {
     Integer platinum;
     List<Integer> neighbor;
     Map<Integer, Integer> distance;
+    Integer goal;
 
     // constructor
     public Zone() {
     }
 
-    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum, List<Integer> neighbor, Map<Integer, Integer> distance) {
+    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum) {
         this.zId = zId;
         this.ownerId = ownerId;
         this.podsP0 = podsP0;
         this.podsP1 = podsP1;
         this.visible = visible;
         this.platinum = platinum;
-        this.neighbor = neighbor;
-        this.distance = distance;
+        this.neighbor = new ArrayList<>();
+        this.distance = new HashMap<>();
+        this.goal = null;
     }
 
     // getters and setters
@@ -91,6 +95,14 @@ class Zone {
         this.distance = distance;
     }
 
+    public Integer getGoal() {
+        return goal;
+    }
+
+    public void setGoal(Integer goal) {
+        this.goal = goal;
+    }
+
     // to string
     @Override
     public String toString() {
@@ -103,6 +115,7 @@ class Zone {
                 ", platinum=" + platinum +
                 ", neighbor=" + neighbor +
                 ", distance=" + distance +
+                ", goal=" + goal +
                 '}';
     }
 

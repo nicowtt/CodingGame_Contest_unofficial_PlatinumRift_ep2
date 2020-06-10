@@ -92,4 +92,8 @@ class Board {
     public void addZoneVisited(Integer idZoneVisited) {
         this.zoneVisited.add(idZoneVisited);
     }
+
+    public void updateZone(Zone zoneToUpdate) {
+        zoneList.add(zoneToUpdate);
+    }
 }

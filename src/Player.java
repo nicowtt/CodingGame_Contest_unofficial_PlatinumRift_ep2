@@ -8,7 +8,7 @@ import java.util.*;
  **/
 class Player {
     Board board;
-    Zone zone;
+//    Zone zone;
     MoveObj moveObj;
     Utils utils;
     Move move;
@@ -54,18 +54,29 @@ class Player {
                 int podsP1 = in.nextInt(); // player 1's PODs on this zone
                 int visible = in.nextInt(); // 1 if one of your units can see this tile, else 0
                 int platinum = in.nextInt(); // the amount of Platinum this zone can provide (0 if hidden by fog)
-                zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum, new ArrayList<>(), new HashMap<>());
-                zoneList.add(zone);
+                if (turnCount == 1) {
+                    Zone zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum);
+                    zoneList.add(zone);
+                } else {
+                    Zone zone = board.getZoneList().get(i);
+                    zone.setOwnerId(ownerId);
+                    zone.setPodsP0(podsP0);
+                    zone.setPodsP1(podsP1);
+                    zone.setVisible(visible);
+                    board.updateZone(zone);
+                }
+
             }
-            board.setZoneList(zoneList);
-            zoneList = new ArrayList<>();
 
             if (turnCount == 1) { // search for first move
+                board.setZoneList(zoneList);
                 int myZoneBaseId = utils.findMyBaseZoneId(board, myId);
                 int oppZoneBasId = utils.findOppBAseZoneId(board, utils.findOppId(myId));
                 board.setMyBaseZoneId(myZoneBaseId);
                 board.setOppBAseZoneId(oppZoneBasId);
                 utils.recordNeighborOnZone(board);
+                System.err.println("my base: " + board.getZoneList().get(board.getMyBaseZoneId()).toString());
+
 
                 // find opp path base with BFS and store on Board
                 Instant start = Instant.now();
@@ -102,9 +113,9 @@ class Player {
 
             // first line for movement commands, second line no longer used (see the protocol in the statement for details)
             if (turnCount == 1) {
-                System.out.println(move.firstMoveIA1and2(board));
+                System.out.println(move.firstMoveIA13(board));
             } else {
-                System.out.println(move.moveIA2(board, myId));
+                System.out.println(move.moveIA3(board, myId));
             }
             System.out.println("WAIT");
         }

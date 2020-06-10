@@ -8,6 +8,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -101,10 +103,15 @@ class Board {
     public void addZoneVisited(Integer idZoneVisited) {
         this.zoneVisited.add(idZoneVisited);
     }
+
+    public void updateZone(Zone zoneToUpdate) {
+        zoneList.add(zoneToUpdate);
+    }
 }
 
 class Move {
     Utils utils = new Utils();
+    private final int NOPATH = -1;
 
     /**
      * move 10 pods
@@ -137,21 +144,24 @@ class Move {
      * @return
      */
     public String firstMoveIA13(Board board) {
-        int myBaseId = board.getMyBaseZoneId();
-        board.addZoneVisited(board.getMyBaseZoneId());
-        int moveZoneId = -1;
-        List<Zone> zonesAroundMyBase = utils.findZonesAroundZone(board.getMovePossiblity(), board.getMyBaseZoneId(), board);
-        List<Zone> platinumZonePossibility = utils.findPlatinumOnZoneList(zonesAroundMyBase);
+        int firstMovetoZone;
 
-        if (!platinumZonePossibility.isEmpty()) {
-            moveZoneId = platinumZonePossibility.get(0).getzId();
-            board.addZoneVisited(platinumZonePossibility.get(0).getzId());
+        // if opp is in range of 7 zones! -> attack with 10 pods
+        if (board.getZoneList().get(board.getMyBaseZoneId()).getDistance().get(board.oppBAseZoneId) <= 8) {
+            // attack with 10 drones
+            firstMovetoZone = utils.getFirstMoveToBFSPath(board.getMyBaseZoneId(), board.getOppBAseZoneId(), board); // first zone direction to oppBase
+//            List<Integer> pathToOpp = board.getPathToOpp();
+//            pathToOpp.remove(0);
+            Zone zoneConcerned = board.getZoneList().get(firstMovetoZone);
+            zoneConcerned.setGoal(board.oppBAseZoneId);
+            board.updateZone(zoneConcerned);
+            return "10 " + board.getMyBaseZoneId() + " " + firstMovetoZone;
+        } else {
+            // todo divise par 2 -> go closed zone with platinum
+            return "";
+//            return "10 " + myBaseId + " " + firstMovetoZone;
         }
-        else {
-            moveZoneId = zonesAroundMyBase.get(0).getzId();
-            board.addZoneVisited(zonesAroundMyBase.get(0).getzId());
-        }
-        return "10 " + myBaseId + " " + moveZoneId;
+
     }
 
     /**
@@ -223,43 +233,27 @@ class Move {
 
     /**
      * I know path from myBase to oppBase
-     *
+     * if pods are at 7 zone of ennemies try to go on opp base
      * @param board
      * @param myId
      * @return
      */
     public String moveIA3(Board board, int myId) {
         String move = "";
-        List<Zone> podZones = utils.findPodZonesList(board, myId);
 
-        for (Zone podZone: podZones ) {
-            List<Zone> zonesAroundPodZones = utils.findZonesAroundZone(board.getMovePossiblity(), podZone.getzId(), board);
-            List<Integer> zoneAroundPodsWithoutAlreadyVisited = utils.removeLastVisited(zonesAroundPodZones, board.getZoneVisited());
-            int nbrOfPodOnZone = utils.findNbrOfMyPodOnZone(podZone, myId);
+        for (int i = 0; i < board.getZoneList().size(); i++) {
+            if (board.getZoneList().get(i).getGoal() != null ) {
+                int from = board.getZoneList().get(i).getzId();
+                int nbrOfPodOnZone = board.getZoneList().get(i).getPodsP0();
+                int to = utils.getFirstMoveToBFSPath(from, board.getZoneList().get(i).getGoal(), board);
+                if (to == NOPATH) { to = board.getZoneList().get(i).getNeighbor().get(0); }
+                board.getZoneList().get(to).setGoal(board.getZoneList().get(i).getGoal());
+                board.getZoneList().get(i).setGoal(null);
 
-            Optional<Integer> oppBaseIsOnList = utils.checkIfOppBaseIsOnList(zonesAroundPodZones, board.getOppBAseZoneId());
-            if (oppBaseIsOnList.isPresent()) {
-                System.err.println("passage opp found!");
-                move += nbrOfPodOnZone + " " + podZone.getzId() + " " + board.getOppBAseZoneId() + " ";
-            } else {
-                if (zoneAroundPodsWithoutAlreadyVisited.size() > 0 ) {
-                    int randomNbr = utils.getRandomInt(0, zoneAroundPodsWithoutAlreadyVisited.size() - 1);
-                    int moveToZoneFiltered = zoneAroundPodsWithoutAlreadyVisited.get(randomNbr);
-                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZoneFiltered + " ";
-                    board.addZoneVisited(moveToZoneFiltered);
-                    System.err.println("passage exploration");
-                } else {
-                    int randomNbr = utils.getRandomInt(0, zonesAroundPodZones.size() - 1);
-                    int moveToZone = zonesAroundPodZones.get(randomNbr).getzId();
-                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZone + " ";
-                    board.addZoneVisited(moveToZone);
-                }
+                move += nbrOfPodOnZone + " " + from + " " + to + " ";
+                break;
             }
-            // todo find better path
-            System.err.println("path to opp:" + board.getPathToOpp().toString());
-
         }
-        System.err.println(move);
         return move.trim();
     }
 
@@ -322,7 +316,7 @@ class MoveObj {
  **/
 class Player {
     Board board;
-    Zone zone;
+//    Zone zone;
     MoveObj moveObj;
     Utils utils;
     Move move;
@@ -368,18 +362,29 @@ class Player {
                 int podsP1 = in.nextInt(); // player 1's PODs on this zone
                 int visible = in.nextInt(); // 1 if one of your units can see this tile, else 0
                 int platinum = in.nextInt(); // the amount of Platinum this zone can provide (0 if hidden by fog)
-                zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum, new ArrayList<>(), new HashMap<>());
-                zoneList.add(zone);
+                if (turnCount == 1) {
+                    Zone zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum);
+                    zoneList.add(zone);
+                } else {
+                    Zone zone = board.getZoneList().get(i);
+                    zone.setOwnerId(ownerId);
+                    zone.setPodsP0(podsP0);
+                    zone.setPodsP1(podsP1);
+                    zone.setVisible(visible);
+                    board.updateZone(zone);
+                }
+
             }
-            board.setZoneList(zoneList);
-            zoneList = new ArrayList<>();
 
             if (turnCount == 1) { // search for first move
+                board.setZoneList(zoneList);
                 int myZoneBaseId = utils.findMyBaseZoneId(board, myId);
                 int oppZoneBasId = utils.findOppBAseZoneId(board, utils.findOppId(myId));
                 board.setMyBaseZoneId(myZoneBaseId);
                 board.setOppBAseZoneId(oppZoneBasId);
                 utils.recordNeighborOnZone(board);
+                System.err.println("my base: " + board.getZoneList().get(board.getMyBaseZoneId()).toString());
+
 
                 // find opp path base with BFS and store on Board
                 Instant start = Instant.now();
@@ -416,9 +421,9 @@ class Player {
 
             // first line for movement commands, second line no longer used (see the protocol in the statement for details)
             if (turnCount == 1) {
-                System.out.println(move.firstMoveIA1and2(board));
+                System.out.println(move.firstMoveIA13(board));
             } else {
-                System.out.println(move.moveIA2(board, myId));
+                System.out.println(move.moveIA3(board, myId));
             }
             System.out.println("WAIT");
         }
@@ -426,6 +431,7 @@ class Player {
 }
 
 class Utils {
+    private final int NOPATH = -1;
 
     public List<Zone> findZonesAroundZone(List<MoveObj> moveObjList, int inputZoneId, Board board) {
         List<Integer> zoneIdAroundInputInteger = new ArrayList<>();
@@ -596,6 +602,23 @@ class Utils {
         return result;
     }
 
+    public Integer getFirstMoveToBFSPath(Integer from, Integer to, Board board) {
+        List<Integer> oppPathList = new ArrayList<>();
+
+        Node result = this.BFS(from, to, board);
+        while (result != null) {
+            oppPathList.add(result.getId());
+            result = result.parent;
+        }
+        Collections.reverse(oppPathList);
+        oppPathList.remove(0);
+        if (!oppPathList.isEmpty()) {
+            return oppPathList.get(0);
+        } else {
+            return NOPATH;
+        }
+    }
+
     public Node BFS(Integer from, Integer to, Board board) {
         Set<Integer> discovered = new HashSet<>();
         List<Node> queue = new ArrayList<>();
@@ -620,6 +643,8 @@ class Utils {
         }
         return null;
     }
+
+
 }
 
 class Zone {
@@ -631,20 +656,22 @@ class Zone {
     Integer platinum;
     List<Integer> neighbor;
     Map<Integer, Integer> distance;
+    Integer goal;
 
     // constructor
     public Zone() {
     }
 
-    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum, List<Integer> neighbor, Map<Integer, Integer> distance) {
+    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum) {
         this.zId = zId;
         this.ownerId = ownerId;
         this.podsP0 = podsP0;
         this.podsP1 = podsP1;
         this.visible = visible;
         this.platinum = platinum;
-        this.neighbor = neighbor;
-        this.distance = distance;
+        this.neighbor = new ArrayList<>();
+        this.distance = new HashMap<>();
+        this.goal = null;
     }
 
     // getters and setters
@@ -712,6 +739,14 @@ class Zone {
         this.distance = distance;
     }
 
+    public Integer getGoal() {
+        return goal;
+    }
+
+    public void setGoal(Integer goal) {
+        this.goal = goal;
+    }
+
     // to string
     @Override
     public String toString() {
@@ -724,6 +759,7 @@ class Zone {
                 ", platinum=" + platinum +
                 ", neighbor=" + neighbor +
                 ", distance=" + distance +
+                ", goal=" + goal +
                 '}';
     }
 

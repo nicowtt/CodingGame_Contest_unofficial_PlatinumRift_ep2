@@ -2,6 +2,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 class Utils {
+    private final int NOPATH = -1;
 
     public List<Zone> findZonesAroundZone(List<MoveObj> moveObjList, int inputZoneId, Board board) {
         List<Integer> zoneIdAroundInputInteger = new ArrayList<>();
@@ -172,6 +173,23 @@ class Utils {
         return result;
     }
 
+    public Integer getFirstMoveToBFSPath(Integer from, Integer to, Board board) {
+        List<Integer> oppPathList = new ArrayList<>();
+
+        Node result = this.BFS(from, to, board);
+        while (result != null) {
+            oppPathList.add(result.getId());
+            result = result.parent;
+        }
+        Collections.reverse(oppPathList);
+        oppPathList.remove(0);
+        if (!oppPathList.isEmpty()) {
+            return oppPathList.get(0);
+        } else {
+            return NOPATH;
+        }
+    }
+
     public Node BFS(Integer from, Integer to, Board board) {
         Set<Integer> discovered = new HashSet<>();
         List<Node> queue = new ArrayList<>();
@@ -196,4 +214,6 @@ class Utils {
         }
         return null;
     }
+
+
 }
