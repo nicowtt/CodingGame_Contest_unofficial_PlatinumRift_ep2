@@ -13,6 +13,7 @@ class Zone {
     List<Integer> neighbor;
     Map<Integer, Integer> distance;
     Integer goal;
+    Boolean visited;
 
     // constructor
     public Zone() {
@@ -28,6 +29,7 @@ class Zone {
         this.neighbor = new ArrayList<>();
         this.distance = new HashMap<>();
         this.goal = null;
+        this.visited = false;
     }
 
     // getters and setters
@@ -103,6 +105,14 @@ class Zone {
         this.goal = goal;
     }
 
+    public Boolean getVisited() {
+        return visited;
+    }
+
+    public void setVisited(Boolean visited) {
+        this.visited = visited;
+    }
+
     // to string
     @Override
     public String toString() {
@@ -116,6 +126,7 @@ class Zone {
                 ", neighbor=" + neighbor +
                 ", distance=" + distance +
                 ", goal=" + goal +
+                ", visited=" + visited +
                 '}';
     }
 

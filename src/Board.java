@@ -9,18 +9,16 @@ class Board {
     List<MoveObj> movePossiblity;
     int myBaseZoneId;
     int oppBAseZoneId;
-    List<Integer> zoneVisited;
     List<Integer> pathToOpp;
 
     // constructor
     public Board() {
     }
 
-    public Board(int zoneCount, int linkCount, List<MoveObj> movePossiblity, List<Integer> zoneVisited) {
+    public Board(int zoneCount, int linkCount, List<MoveObj> movePossiblity) {
         this.zoneCount = zoneCount;
         this.linkCount = linkCount;
         this.movePossiblity = movePossiblity;
-        this.zoneVisited = zoneVisited;
     }
 
     // getters and setters
@@ -72,14 +70,6 @@ class Board {
         this.oppBAseZoneId = oppBAseZoneId;
     }
 
-    public List<Integer> getZoneVisited() {
-        return zoneVisited;
-    }
-
-    public void setZoneVisited(List<Integer> zoneVisited) {
-        this.zoneVisited = zoneVisited;
-    }
-
     public List<Integer> getPathToOpp() {
         return pathToOpp;
     }
@@ -89,10 +79,6 @@ class Board {
     }
 
     // methods
-    public void addZoneVisited(Integer idZoneVisited) {
-        this.zoneVisited.add(idZoneVisited);
-    }
-
     public void updateZone(Zone zoneToUpdate) {
         zoneList.add(zoneToUpdate);
     }

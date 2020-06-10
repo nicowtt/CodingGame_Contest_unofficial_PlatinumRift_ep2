@@ -88,8 +88,8 @@ class Utils {
         return platinumZoneList;
     }
 
-    public List<Zone> findPodZonesList(Board board, int myId) {
-        List<Zone> podZonesList = new ArrayList<>();
+    public Set<Zone> findPodZonesList(Board board, int myId) {
+        Set<Zone> podZonesList = new HashSet<>();
 
         // find zone of pod
         for (Zone zonePods: board.getZoneList() ) {
@@ -116,10 +116,10 @@ class Utils {
     public int findNbrOfMyPodOnZone(Zone inputZone, int myId) {
 
         if (myId == 0) {
-            System.err.println("Pod is on zone(player:0): " + inputZone.toString());
+//            System.err.println("Pod is on zone(player:0): " + inputZone.toString());
             return inputZone.getPodsP0();
         } else {
-            System.err.println("Pod is on zone(player1): " + inputZone.toString());
+//            System.err.println("Pod is on zone(player1): " + inputZone.toString());
             return inputZone.getPodsP1();
         }
     }

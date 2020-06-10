@@ -18,7 +18,6 @@ class Player {
     }
     public void run() {
         int turnCount = 0;
-        Map<Integer, Integer> moveZone = new HashMap<>();
         List<Zone> zoneList = new ArrayList<>();
         List<MoveObj> moveObjList = new ArrayList<>();
         utils = new Utils();
@@ -41,7 +40,7 @@ class Player {
             moveObj = new MoveObj(zone1, zone2);
             moveObjList.add(moveObj);
         }
-        board = new Board(zoneCount, linkCount, moveObjList, new ArrayList<>());
+        board = new Board(zoneCount, linkCount, moveObjList);
 
         // game loop
         while (true) {
@@ -67,7 +66,6 @@ class Player {
                 }
 
             }
-
             if (turnCount == 1) { // search for first move
                 board.setZoneList(zoneList);
                 int myZoneBaseId = utils.findMyBaseZoneId(board, myId);
@@ -106,9 +104,14 @@ class Player {
                 Instant end2 = Instant.now();
                 System.err.println("BFS time my base to each zone" + Duration.between(start2, end2));
             }
-            if (turnCount % 10 == 0) { // only for moveIA2
-                List<Integer> newList = new ArrayList<>();
-                board.setZoneVisited(newList);
+
+            // all zone visited to false every 10 turns
+            if (turnCount % 10 == 0) {
+                List<Zone> allList = board.getZoneList();
+                for (Zone zone: allList ) {
+                    zone.setVisited(false);
+                }
+                board.setZoneList(allList);
             }
 
             // first line for movement commands, second line no longer used (see the protocol in the statement for details)
