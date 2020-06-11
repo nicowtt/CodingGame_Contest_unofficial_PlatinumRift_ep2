@@ -13,47 +13,106 @@ class Move {
      * @return
      */
     public String firstMoveIA13(Board board) {
-        int firstMovetoZone;
+        boolean fivePodAlreadyStart = false;
+        boolean tenPodAlreadyStart = false;
         String move = "";
 
         // if opp is in range of 7 zones! -> attack with 10 pods
         if (board.getZoneList().get(board.getMyBaseZoneId()).getDistance().get(board.oppBAseZoneId) <= 8) {
-            System.err.println("passage attaque directe!!");
+            System.err.println("pass direct attack!!");
             // attack with 10 drones
-            firstMovetoZone = utils.getFirstMoveToBFSPath(board.getMyBaseZoneId(), board.getOppBAseZoneId(), board); // first zone direction to oppBase
-            Zone zoneConcerned = board.getZoneList().get(firstMovetoZone);
-            zoneConcerned.setGoal(board.oppBAseZoneId);
-            zoneConcerned.setVisited(true);
-            board.updateZone(zoneConcerned);
+            int firstMovetoZone = utils.getFirstMoveToBFSPath(board.getMyBaseZoneId(), board.getOppBAseZoneId(), board); // first zone direction to oppBase
+
+            Zone nextMoveZone = board.getZoneList().get(firstMovetoZone);
+            nextMoveZone.setGoal(board.oppBAseZoneId);
+            nextMoveZone.setVisited(true);
+            board.updateZone(nextMoveZone);
             return "10 " + board.getMyBaseZoneId() + " " + firstMovetoZone;
         } else {
-            // firstmoveIa2
-        }
+            //
             int myBaseId = board.getMyBaseZoneId();
-            int moveZoneId = -1;
+            Zone myBaseZone;
+            Zone firstNextMoveZone;
+            Zone secondNextMoveZone;
+
             List<Zone> zonesAroundMyBase = utils.findZonesAroundZone(board.getMovePossiblity(), board.getMyBaseZoneId(), board);
             List<Zone> platinumZonePossibility = utils.findPlatinumOnZoneList(zonesAroundMyBase);
 
-            if (!platinumZonePossibility.isEmpty()) {
-                moveZoneId = platinumZonePossibility.get(0).getzId();
-                Zone zoneConcerned = board.getZoneList().get(board.getMyBaseZoneId());
-                zoneConcerned.setVisited(true);
-                board.updateZone(zoneConcerned);
-                Zone zoneConcerned2 = board.getZoneList().get(moveZoneId);
-                zoneConcerned2.setVisited(true);
-                board.updateZone(zoneConcerned2);
-            }
-            else {
-                moveZoneId = zonesAroundMyBase.get(0).getzId();
-                Zone zoneConcerned = board.getZoneList().get(board.getMyBaseZoneId());
-                zoneConcerned.setVisited(true);
-                board.updateZone(zoneConcerned);
-                Zone zoneConcerned2 = board.getZoneList().get(moveZoneId);
-                zoneConcerned2.setVisited(true);
-                board.updateZone(zoneConcerned2);
-            }
-            return "10 " + myBaseId + " " + moveZoneId;
+            if (platinumZonePossibility.size() == 1) { // run 5 pods
+                int moveZoneId = platinumZonePossibility.get(0).getzId();
 
+                firstNextMoveZone = board.getZoneList().get(moveZoneId);
+                firstNextMoveZone.setVisited(true);
+                board.updateZone(firstNextMoveZone);
+
+                move += "5 " + myBaseId + " " + firstNextMoveZone.getzId() + " ";
+                fivePodAlreadyStart = true;
+            }
+
+            if (platinumZonePossibility.size() > 1){
+                int firstMoveZoneId = platinumZonePossibility.get(0).getzId();
+                int secondMoveZoneId = platinumZonePossibility.get(1).getzId();
+
+                firstNextMoveZone = board.getZoneList().get(firstMoveZoneId);
+                firstNextMoveZone.setVisited(true);
+                board.updateZone(firstNextMoveZone);
+
+                secondNextMoveZone = board.getZoneList().get(secondMoveZoneId);
+                secondNextMoveZone.setVisited(true);
+                board.updateZone(secondNextMoveZone);
+
+                move += "5 " + myBaseId + " " + firstNextMoveZone.getzId() + " ";
+                move += "5 " + myBaseId + " " + secondNextMoveZone.getzId() + " ";
+                tenPodAlreadyStart = true;
+            }
+
+            if (platinumZonePossibility.isEmpty()) {
+                if (fivePodAlreadyStart ) {
+                    // start 5 other first neighbor
+                    int moveZoneId = zonesAroundMyBase.get(0).getzId();
+
+                    secondNextMoveZone = board.getZoneList().get(moveZoneId);
+                    secondNextMoveZone.setVisited(true);
+                    board.updateZone(secondNextMoveZone);
+
+                    move += "5 " + myBaseId + " " + secondNextMoveZone.getzId()+ " ";
+                    tenPodAlreadyStart = true;
+                }
+                if (!tenPodAlreadyStart) {
+                    // start 2 * 5 pods if you can
+                    if (zonesAroundMyBase.size() > 1) {
+                        int firstMoveZoneId = zonesAroundMyBase.get(0).getzId();
+                        int secondMoveZoneId = zonesAroundMyBase.get(1).getzId();
+
+                        firstNextMoveZone = board.getZoneList().get(firstMoveZoneId);
+                        firstNextMoveZone.setVisited(true);
+                        board.updateZone(firstNextMoveZone);
+
+                        secondNextMoveZone = board.getZoneList().get(secondMoveZoneId);
+                        secondNextMoveZone.setVisited(true);
+                        board.updateZone(secondNextMoveZone);
+
+                        move += "5 " + myBaseId + " " + firstNextMoveZone.getzId() + " ";
+                        move += "5 " + myBaseId + " " + secondNextMoveZone.getzId() + " ";
+                    }
+                    else {
+                        int firstMoveZoneId = zonesAroundMyBase.get(0).getzId();
+
+                        firstNextMoveZone = board.getZoneList().get(firstMoveZoneId);
+                        firstNextMoveZone.setVisited(true);
+                        board.updateZone(firstNextMoveZone);
+
+                        move += "10 " + myBaseId + " " + firstNextMoveZone.getzId() + " ";
+                    }
+
+                }
+            }
+
+            myBaseZone = board.getZoneList().get(board.getMyBaseZoneId());
+            myBaseZone.setVisited(true);
+            board.updateZone(myBaseZone);
+            return move;
+        }
     }
 
     /**
@@ -65,7 +124,10 @@ class Move {
      */
     public String moveIA3(Board board, int myId) {
         String move = "";
-        // for pod with goal
+        //todo check if zonePod > 20 in far to oppBase
+
+
+        // for pod with goal -> direct attack for now
         for (int i = 0; i < board.getZoneList().size(); i++) {
             if (board.getZoneList().get(i).getGoal() != null ) {
                 int from = board.getZoneList().get(i).getzId();
@@ -81,8 +143,17 @@ class Move {
             }
         }
 
-        // MOVE IA2
+        // MOVE IA2 -> explore or random -> if neighbor is oppBase -> attack
+        move += this.moveExplAndRandAndAttackNeihbotBaseOpp(board, myId);
+
+        System.err.println(move);
+        return move.trim();
+    }
+
+    public String moveExplAndRandAndAttackNeihbotBaseOpp(Board board, int myId) {
+        String move = "";
         Set<Zone> podZones = utils.findPodZonesList(board, myId);
+//        check
 //        for (Zone zone : podZones ) {
 //            System.err.println("podZones: " + zone.getzId());
 //            List<Integer> neighbor = zone.getNeighbor();
@@ -126,8 +197,7 @@ class Move {
                 }
             }
         }
-        System.err.println(move);
-        return move.trim();
+        return move;
     }
 
 }
