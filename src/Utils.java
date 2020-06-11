@@ -215,4 +215,30 @@ class Utils {
         return null;
     }
 
+    public List<Zone> getGroupOfPodForAttackOppBase(Set<Zone> podZone, int myId, int nbrMinForAttack) {
+        List<Zone> result = new ArrayList<>();
+
+        for (Zone zone: podZone ) {
+            if ((myId == 0) && (zone.getPodsP0() > nbrMinForAttack)) {
+//                System.err.println("add for attack");
+                result.add(zone);
+            }
+            if ((myId == 1) && (zone.getPodsP1() > nbrMinForAttack)) {
+//                System.err.println("add for attack");
+                result.add(zone);
+            }
+        }
+        return result;
+    }
+
+    public void removeOldGoalExceptBlitzZone(Board board) {
+        for (int i = 0; i < board.getZoneList().size(); i++) {
+            if ((board.getZoneList().get(i).getGoal() != null) && (!board.getZoneList().get(i).getBlitzAttack())) {
+                Zone zoneToUpdate = board.getZoneList().get(i);
+                zoneToUpdate.setGoal(null);
+                board.updateZone(zoneToUpdate);
+            }
+        }
+    }
+
 }

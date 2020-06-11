@@ -120,6 +120,7 @@ class Move {
             Zone nextMoveZone = board.getZoneList().get(firstMovetoZone);
             nextMoveZone.setGoal(board.oppBAseZoneId);
             nextMoveZone.setVisited(true);
+            nextMoveZone.setBlitzAttack(true);
             board.updateZone(nextMoveZone);
             return "10 " + board.getMyBaseZoneId() + " " + firstMovetoZone;
         } else {
@@ -218,27 +219,53 @@ class Move {
      */
     public String moveIA3(Board board, int myId) {
         String move = "";
-        //todo check if zonePod > 20 in far to oppBase
-
-
-        // for pod with goal -> direct attack for now
-        for (int i = 0; i < board.getZoneList().size(); i++) {
-            if (board.getZoneList().get(i).getGoal() != null ) {
-                int from = board.getZoneList().get(i).getzId();
-                int nbrOfPodOnZone = board.getZoneList().get(i).getPodsP0();
-                int to = utils.getFirstMoveToBFSPath(from, board.getZoneList().get(i).getGoal(), board);
-                if (to == NOPATH) { to = board.getZoneList().get(i).getNeighbor().get(0); }
-                board.getZoneList().get(to).setGoal(board.getZoneList().get(i).getGoal());
-                board.getZoneList().get(i).setGoal(null);
-                board.getZoneList().get(i).setVisited(true);
-
-                move += nbrOfPodOnZone + " " + from + " " + to + " ";
-                break;
+        // zonePod > 20 -> ATTACK to oppBase !!!
+        Set<Zone> podZones = utils.findPodZonesList(board, myId);
+        List<Zone> podForAttack = utils.getGroupOfPodForAttackOppBase(podZones, myId, 20);
+        if (!podForAttack.isEmpty()) {
+            for (Zone zone: podForAttack ) {
+                Zone zoneForAttack = board.getZoneList().get(zone.getzId()); // put goal and visited zone for attack
+                zoneForAttack.setGoal(board.oppBAseZoneId);
+                zoneForAttack.setVisited(true);
+                board.updateZone(zoneForAttack);
             }
         }
 
+        // for pod with goal -> direct attack for now
+        Set<Zone> zoneWithGoal = new HashSet<>();
+        int nbrOfPodOnZone = 0;
+        for (Zone zone : board.getZoneList() ) {
+            if (zone.getGoal() != null) { zoneWithGoal.add(zone); }
+        }
+
+        for (Zone zone : zoneWithGoal ) {
+//            System.err.println("passage to goal!!");
+//            System.err.println("zoneId: " + zone.getzId());
+//            System.err.println("goal to: " + zone.getGoal());
+            int from = zone.getzId();
+            if (myId == 0) {
+               nbrOfPodOnZone = zone.getPodsP0();
+            } else {
+                nbrOfPodOnZone = zone.getPodsP1();
+            }
+            int to = utils.getFirstMoveToBFSPath(from, zone.getGoal(), board);
+            if (to == NOPATH) { to = board.getZoneList().get(zone.getzId()).getNeighbor().get(0); }
+            board.getZoneList().get(to).setGoal(zone.getGoal());
+            board.getZoneList().get(to).setBlitzAttack(true);
+            board.getZoneList().get(zone.getzId()).setVisited(true);
+            if (zone.getBlitzAttack()) {
+                board.getZoneList().get(zone.getzId()).setBlitzAttack(false);
+            }
+
+            move += nbrOfPodOnZone + " " + from + " " + to + " ";
+        }
+
+
         // MOVE IA2 -> explore or random -> if neighbor is oppBase -> attack
         move += this.moveExplAndRandAndAttackNeihbotBaseOpp(board, myId);
+
+        // cleaning old goal without zone with blitzAttack
+        utils.removeOldGoalExceptBlitzZone(board);
 
         System.err.println(move);
         return move.trim();
@@ -247,49 +274,43 @@ class Move {
     public String moveExplAndRandAndAttackNeihbotBaseOpp(Board board, int myId) {
         String move = "";
         Set<Zone> podZones = utils.findPodZonesList(board, myId);
-//        check
-//        for (Zone zone : podZones ) {
-//            System.err.println("podZones: " + zone.getzId());
-//            List<Integer> neighbor = zone.getNeighbor();
-//            System.err.println("neighbor: " + zone.getNeighbor());
-//            for (int i = 0; i < neighbor.size(); i++) {
-//                System.err.println("id: " + board.getZoneList().get(neighbor.get(i)).getzId() + " visited: " + board.getZoneList().get(neighbor.get(i)).getVisited());
-//            }
-//        }
 
         for (Zone podZone: podZones ) {
-            List<Zone> zonesAroundPodZones = utils.findZonesAroundZone(board.getMovePossiblity(), podZone.getzId(), board);
-            List<Integer> zoneAroundPodsWithoutAlreadyVisited = new ArrayList<>();
-            for (Zone zone: zonesAroundPodZones) {
-                if (!zone.getVisited()) {
-                    zoneAroundPodsWithoutAlreadyVisited.add(zone.getzId());
+            if (podZone.getGoal() == null) { // get only if no goal
+                List<Zone> zonesAroundPodZones = utils.findZonesAroundZone(board.getMovePossiblity(), podZone.getzId(), board);
+                List<Integer> zoneAroundPodsWithoutAlreadyVisited = new ArrayList<>();
+                for (Zone zone: zonesAroundPodZones) {
+                    if (!zone.getVisited()) {
+                        zoneAroundPodsWithoutAlreadyVisited.add(zone.getzId());
+                    }
                 }
-            }
-            int nbrOfPodOnZone = utils.findNbrOfMyPodOnZone(podZone, myId);
+                int nbrOfPodOnZone = utils.findNbrOfMyPodOnZone(podZone, myId);
 
-            Optional<Integer> oppBaseIsOnList = utils.checkIfOppBaseIsOnList(zonesAroundPodZones, board.getOppBAseZoneId());
-            if (oppBaseIsOnList.isPresent()) {
-                System.err.println("passage opp found!");
-                move += nbrOfPodOnZone + " " + podZone.getzId() + " " + board.getOppBAseZoneId() + " ";
-            } else {
-                if (!zoneAroundPodsWithoutAlreadyVisited.isEmpty()) {
-                    System.err.println("passage exploration");
-                    int randomNbr = utils.getRandomInt(0, zoneAroundPodsWithoutAlreadyVisited.size() - 1);
-                    int moveToZoneFiltered = zoneAroundPodsWithoutAlreadyVisited.get(randomNbr);
-                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZoneFiltered + " ";
-                    Zone zoneConcerned2 = board.getZoneList().get(moveToZoneFiltered);
-                    zoneConcerned2.setVisited(true);
-                    board.updateZone(zoneConcerned2);
+                Optional<Integer> oppBaseIsOnList = utils.checkIfOppBaseIsOnList(zonesAroundPodZones, board.getOppBAseZoneId());
+                if (oppBaseIsOnList.isPresent()) {
+//                System.err.println("passage opp found!");
+                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + board.getOppBAseZoneId() + " ";
                 } else {
-                    System.err.println("passage random");
-                    int randomNbr = utils.getRandomInt(0, zonesAroundPodZones.size() - 1);
-                    int moveToZone = zonesAroundPodZones.get(randomNbr).getzId();
-                    move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZone + " ";
-                    Zone zoneConcerned2 = board.getZoneList().get(moveToZone);
-                    zoneConcerned2.setVisited(true);
-                    board.updateZone(zoneConcerned2);
+                    if (!zoneAroundPodsWithoutAlreadyVisited.isEmpty()) {
+//                    System.err.println("passage exploration");
+                        int randomNbr = utils.getRandomInt(0, zoneAroundPodsWithoutAlreadyVisited.size() - 1);
+                        int moveToZoneFiltered = zoneAroundPodsWithoutAlreadyVisited.get(randomNbr);
+                        move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZoneFiltered + " ";
+                        Zone zoneConcerned2 = board.getZoneList().get(moveToZoneFiltered);
+                        zoneConcerned2.setVisited(true);
+                        board.updateZone(zoneConcerned2);
+                    } else {
+//                    System.err.println("passage random");
+                        int randomNbr = utils.getRandomInt(0, zonesAroundPodZones.size() - 1);
+                        int moveToZone = zonesAroundPodZones.get(randomNbr).getzId();
+                        move += nbrOfPodOnZone + " " + podZone.getzId() + " " + moveToZone + " ";
+                        Zone zoneConcerned2 = board.getZoneList().get(moveToZone);
+                        zoneConcerned2.setVisited(true);
+                        board.updateZone(zoneConcerned2);
+                    }
                 }
             }
+
         }
         return move;
     }
@@ -684,6 +705,32 @@ class Utils {
         return null;
     }
 
+    public List<Zone> getGroupOfPodForAttackOppBase(Set<Zone> podZone, int myId, int nbrMinForAttack) {
+        List<Zone> result = new ArrayList<>();
+
+        for (Zone zone: podZone ) {
+            if ((myId == 0) && (zone.getPodsP0() > nbrMinForAttack)) {
+//                System.err.println("add for attack");
+                result.add(zone);
+            }
+            if ((myId == 1) && (zone.getPodsP1() > nbrMinForAttack)) {
+//                System.err.println("add for attack");
+                result.add(zone);
+            }
+        }
+        return result;
+    }
+
+    public void removeOldGoalExceptBlitzZone(Board board) {
+        for (int i = 0; i < board.getZoneList().size(); i++) {
+            if ((board.getZoneList().get(i).getGoal() != null) && (!board.getZoneList().get(i).getBlitzAttack())) {
+                Zone zoneToUpdate = board.getZoneList().get(i);
+                zoneToUpdate.setGoal(null);
+                board.updateZone(zoneToUpdate);
+            }
+        }
+    }
+
 }
 
 class Zone {
@@ -697,6 +744,7 @@ class Zone {
     Map<Integer, Integer> distance;
     Integer goal;
     Boolean visited;
+    Boolean blitzAttack;
 
     // constructor
     public Zone() {
@@ -713,6 +761,7 @@ class Zone {
         this.distance = new HashMap<>();
         this.goal = null;
         this.visited = false;
+        this.blitzAttack = false;
     }
 
     // getters and setters
@@ -796,6 +845,14 @@ class Zone {
         this.visited = visited;
     }
 
+    public Boolean getBlitzAttack() {
+        return blitzAttack;
+    }
+
+    public void setBlitzAttack(Boolean blitzAttack) {
+        this.blitzAttack = blitzAttack;
+    }
+
     // to string
     @Override
     public String toString() {
@@ -810,6 +867,7 @@ class Zone {
                 ", distance=" + distance +
                 ", goal=" + goal +
                 ", visited=" + visited +
+                ", blitzAttack=" + blitzAttack +
                 '}';
     }
 

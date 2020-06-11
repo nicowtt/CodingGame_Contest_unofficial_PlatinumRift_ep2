@@ -14,6 +14,7 @@ class Zone {
     Map<Integer, Integer> distance;
     Integer goal;
     Boolean visited;
+    Boolean blitzAttack;
 
     // constructor
     public Zone() {
@@ -30,6 +31,7 @@ class Zone {
         this.distance = new HashMap<>();
         this.goal = null;
         this.visited = false;
+        this.blitzAttack = false;
     }
 
     // getters and setters
@@ -113,6 +115,14 @@ class Zone {
         this.visited = visited;
     }
 
+    public Boolean getBlitzAttack() {
+        return blitzAttack;
+    }
+
+    public void setBlitzAttack(Boolean blitzAttack) {
+        this.blitzAttack = blitzAttack;
+    }
+
     // to string
     @Override
     public String toString() {
@@ -127,6 +137,7 @@ class Zone {
                 ", distance=" + distance +
                 ", goal=" + goal +
                 ", visited=" + visited +
+                ", blitzAttack=" + blitzAttack +
                 '}';
     }
 
