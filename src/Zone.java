@@ -15,12 +15,13 @@ class Zone {
     Integer goal;
     Boolean visited;
     Boolean blitzAttack;
+    Double score;
 
     // constructor
     public Zone() {
     }
 
-    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum) {
+    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum, Double score) {
         this.zId = zId;
         this.ownerId = ownerId;
         this.podsP0 = podsP0;
@@ -32,6 +33,7 @@ class Zone {
         this.goal = null;
         this.visited = false;
         this.blitzAttack = false;
+        this.score = score;
     }
 
     // getters and setters
@@ -123,6 +125,14 @@ class Zone {
         this.blitzAttack = blitzAttack;
     }
 
+    public Double getScore() {
+        return score;
+    }
+
+    public void setScore(Double score) {
+        this.score = score;
+    }
+
     // to string
     @Override
     public String toString() {
@@ -138,6 +148,7 @@ class Zone {
                 ", goal=" + goal +
                 ", visited=" + visited +
                 ", blitzAttack=" + blitzAttack +
+                ", score=" + score +
                 '}';
     }
 

@@ -54,7 +54,7 @@ class Player {
                 int visible = in.nextInt(); // 1 if one of your units can see this tile, else 0
                 int platinum = in.nextInt(); // the amount of Platinum this zone can provide (0 if hidden by fog)
                 if (turnCount == 1) {
-                    Zone zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum);
+                    Zone zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum, 0d);
                     zoneList.add(zone);
                 } else {
                     Zone zone = board.getZoneList().get(i);
@@ -104,6 +104,20 @@ class Player {
                 Instant end2 = Instant.now();
                 System.err.println("BFS time my base to each zone" + Duration.between(start2, end2));
             }
+
+            // create score for all zone
+            List<Zone> allZone = board.getZoneList();
+            List<Zone> allZoneScoreUpdated = new ArrayList<>();
+            for (Zone zoneToUpdateScore : allZone ) {
+                Double score  = utils.updateScoreForZone(board, zoneToUpdateScore.getzId() ,myId);
+                zoneToUpdateScore.setScore(score);
+                allZoneScoreUpdated.add(zoneToUpdateScore);
+            }
+            board.setZoneList(allZoneScoreUpdated);
+            // check
+//            System.err.println("zone37 score: " + board.getZoneList().get(37).getScore());
+//            System.err.println("zone21 score: " + board.getZoneList().get(21).getScore());
+
 
             // all zone visited to false every 10 turns
             if (turnCount % 10 == 0) {

@@ -241,4 +241,71 @@ class Utils {
         }
     }
 
+    public Double updateScoreForZone(Board board, Integer zoneId, int myId) {
+        double score = 0;
+        Zone zoneToUpdate = board.getZoneList().get(zoneId);
+
+        if ((zoneToUpdate.getPlatinum() > 0) && (zoneToUpdate.getOwnerId() != myId)) { // platinum zone Owner other than me
+            for (int i = 0; i < zoneToUpdate.getPlatinum(); i++) {
+                score += 15;
+            }
+        }
+
+        if ((zoneToUpdate.getPlatinum() > 0) && (zoneToUpdate.getOwnerId() == myId)) { // platinum zone Owner is me
+            for (int i = 0; i < zoneToUpdate.getPlatinum(); i++) {
+                score += 0;
+            }
+        }
+        if (zoneToUpdate.getOwnerId() == -1) { // for neutral zone
+            score += 2;
+        }
+        if (myId == 0) { // zone occuped
+            if (zoneToUpdate.getOwnerId() == 0) {
+                score += 1;
+            } else {
+                score += 1.5; // opp zone
+            }
+        }
+        if (myId == 1) { // zone occuped
+            if (zoneToUpdate.getOwnerId() == 1) {
+                score += 1;
+            } else {
+                score += 1.5; // opp zone
+            }
+        }
+        return score;
+    }
+
+    public Integer getNbrOfPodOnZone(Zone zone, int myId) {
+        int nbrOfPod;
+
+        if (myId == 0) {
+            nbrOfPod = zone.getPodsP0();
+        } else {
+            nbrOfPod = zone.getPodsP1();
+        }
+        return nbrOfPod;
+    }
+
+    public Integer getClosedZoneIdToOppBase(List<Integer> zoneId, Board board) {
+        Long resultLong = 5000l;
+        List<Integer> oppPathList;
+        Integer forReturn = 0;
+
+        for (int i = 0; i < zoneId.size(); i++) {
+            oppPathList = new ArrayList<>();
+            Node result = this.BFS(zoneId.get(i), board.getOppBAseZoneId(), board);
+            while (result != null) {
+                oppPathList.add(result.getId());
+                result = result.parent;
+            }
+            Long nbr = oppPathList.stream().count();
+            System.err.println("nbr onf zone between zone and opp (" + zoneId.get(i) + "): " + nbr);
+            if (nbr < resultLong) {
+                resultLong = nbr;
+                forReturn = zoneId.get(i);
+            }
+        }
+        return forReturn;
+    }
 }

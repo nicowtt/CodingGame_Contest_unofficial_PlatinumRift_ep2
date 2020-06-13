@@ -154,9 +154,9 @@ class Move {
      */
     public String moveIA3(Board board, int myId) {
         String move = "";
-        // on my base, pods > 40 -> BLITZATTACK to oppBase !!!
+        // on my base, pods > 20 -> BLITZATTACK to oppBase !!!
         Set<Zone> podZones = utils.findPodZonesList(board, myId);
-        List<Zone> podForAttack = utils.getGroupOfPodForAttackOppBase(podZones, myId, 40);
+        List<Zone> podForAttack = utils.getGroupOfPodForAttackOppBase(podZones, myId, 20);
         if (!podForAttack.isEmpty()) {
             for (Zone zone: podForAttack ) {
                 Zone zoneForAttack = board.getZoneList().get(zone.getzId()); // put goal and visited zone for attack
@@ -199,7 +199,8 @@ class Move {
         // for other pods:
         // only one pod getOut, other pods are for my base defense
         // explore or random -> if neighbor is oppBase -> attack
-        move += this.moveExplAndRandAndAttackNeihbotBaseOpp(board, myId);
+//        move += this.moveExplAndRandAndAttackNeihbotBaseOpp(board, myId); // old
+        move += this.moveWithScore(board, myId);
 
         // cleaning old goal without zone with blitzAttack
         utils.removeOldGoalExceptBlitzZone(board);
@@ -277,7 +278,80 @@ class Move {
             }
 
         }
-        return move;
+        return move.trim();
+    }
+
+    public String moveWithScore(Board board, int myId) {
+        // todo 1 try to move better with score for group drone IA!!
+        String move = "";
+        Set<Zone> podZones = utils.findPodZonesList(board, myId);
+        Integer nbrOfPod;
+        Double score = Double.MIN_VALUE;
+        Integer bestZoneChoice  = -1000;
+        Set<Integer> bestZoneListSet = new HashSet<>();
+        List<Integer> bestZoneList = new ArrayList<>();
+
+
+        for (Zone podZone: podZones ) {
+            if (podZone.getGoal() == null) {
+                Long nbrOfNeighbor = podZone.getNeighbor().stream().count(); // count neighbor
+                nbrOfPod = utils.getNbrOfPodOnZone(podZone, myId); // count nbr of pod on zone
+                System.err.println("podzone: " + podZone.getzId());
+                // todo 2 check Score of possibility zone
+                for (Integer neighborId : podZone.getNeighbor()) { // find best score on neighbor on each zonePod
+                    Zone zone = board.getZoneList().get(neighborId);
+                    System.err.println("neighbor:" + neighborId + " Score: " + board.getZoneList().get(neighborId).getScore());
+                    if (zone.getScore() > score) {
+                        score = zone.getScore();
+                        bestZoneChoice = neighborId;
+                    }
+                }
+                if (bestZoneChoice != -1000) {
+                    bestZoneChoice = board.getZoneList().get(bestZoneChoice).getzId();
+                } else {
+                    bestZoneChoice = null;
+                }
+
+                for (Integer neighborId : podZone.getNeighbor()) { // other turn for take best score zone list
+                    Zone zone = board.getZoneList().get(neighborId);
+                    if (zone.getScore().equals(score)) {
+                        bestZoneListSet.add(neighborId);
+                    }
+                }
+                bestZoneList.addAll(bestZoneListSet);
+
+                System.err.println("pods on: " + podZone.getzId() + " bestNextMove: " + bestZoneChoice);
+                System.err.println("best Zone list: " + bestZoneList.toString());
+
+                if (bestZoneList.size() == nbrOfNeighbor) { // find neighbor closed of oppBase
+                    System.err.println("---> passage -> search closed to opp base !!!");
+                    Integer closedToOppZoneId = utils.getClosedZoneIdToOppBase(bestZoneList, board);
+                    System.err.println("closed neighbor to opp base: " + closedToOppZoneId);
+                    move += "1 " + podZone.getzId() + " " + closedToOppZoneId + " ";
+                }
+                if (bestZoneList.size() > 1) { // zone with equal score, pod can divise?
+                    for (int i = 0; i < bestZoneList.size(); i++) {
+                        System.err.println("bestzone list: " + board.getZoneList().get(bestZoneList.get(i)).getzId());
+                        move += "1 " + podZone.getzId() + " " + bestZoneList.get(i) + " ";
+                    }
+
+                }
+
+                else {
+                    move += nbrOfPod + " " + podZone.getzId() + " " + bestZoneChoice + " ";
+                }
+                move += nbrOfPod + " " + podZone.getzId() + " " + bestZoneChoice + " ";
+                // todo 3 avoid two zone of pod to same better zone !
+
+                // cleaning old goal without zone with blitzAttack
+                utils.removeOldGoalExceptBlitzZone(board);
+                bestZoneListSet = new HashSet<>();
+                bestZoneList = new ArrayList<>();
+                score = Double.MIN_VALUE;
+                bestZoneChoice = -1;
+            }
+        }
+        return move.trim();
     }
 
 }
@@ -385,7 +459,7 @@ class Player {
                 int visible = in.nextInt(); // 1 if one of your units can see this tile, else 0
                 int platinum = in.nextInt(); // the amount of Platinum this zone can provide (0 if hidden by fog)
                 if (turnCount == 1) {
-                    Zone zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum);
+                    Zone zone = new Zone(zId, ownerId, podsP0, podsP1, visible, platinum, 0d);
                     zoneList.add(zone);
                 } else {
                     Zone zone = board.getZoneList().get(i);
@@ -435,6 +509,20 @@ class Player {
                 Instant end2 = Instant.now();
                 System.err.println("BFS time my base to each zone" + Duration.between(start2, end2));
             }
+
+            // create score for all zone
+            List<Zone> allZone = board.getZoneList();
+            List<Zone> allZoneScoreUpdated = new ArrayList<>();
+            for (Zone zoneToUpdateScore : allZone ) {
+                Double score  = utils.updateScoreForZone(board, zoneToUpdateScore.getzId() ,myId);
+                zoneToUpdateScore.setScore(score);
+                allZoneScoreUpdated.add(zoneToUpdateScore);
+            }
+            board.setZoneList(allZoneScoreUpdated);
+            // check
+//            System.err.println("zone37 score: " + board.getZoneList().get(37).getScore());
+//            System.err.println("zone21 score: " + board.getZoneList().get(21).getScore());
+
 
             // all zone visited to false every 10 turns
             if (turnCount % 10 == 0) {
@@ -696,6 +784,73 @@ class Utils {
         }
     }
 
+    public Double updateScoreForZone(Board board, Integer zoneId, int myId) {
+        double score = 0;
+        Zone zoneToUpdate = board.getZoneList().get(zoneId);
+
+        if ((zoneToUpdate.getPlatinum() > 0) && (zoneToUpdate.getOwnerId() != myId)) { // platinum zone Owner other than me
+            for (int i = 0; i < zoneToUpdate.getPlatinum(); i++) {
+                score += 15;
+            }
+        }
+
+        if ((zoneToUpdate.getPlatinum() > 0) && (zoneToUpdate.getOwnerId() == myId)) { // platinum zone Owner is me
+            for (int i = 0; i < zoneToUpdate.getPlatinum(); i++) {
+                score += 0;
+            }
+        }
+        if (zoneToUpdate.getOwnerId() == -1) { // for neutral zone
+            score += 2;
+        }
+        if (myId == 0) { // zone occuped
+            if (zoneToUpdate.getOwnerId() == 0) {
+                score += 1;
+            } else {
+                score += 1.5; // opp zone
+            }
+        }
+        if (myId == 1) { // zone occuped
+            if (zoneToUpdate.getOwnerId() == 1) {
+                score += 1;
+            } else {
+                score += 1.5; // opp zone
+            }
+        }
+        return score;
+    }
+
+    public Integer getNbrOfPodOnZone(Zone zone, int myId) {
+        int nbrOfPod;
+
+        if (myId == 0) {
+            nbrOfPod = zone.getPodsP0();
+        } else {
+            nbrOfPod = zone.getPodsP1();
+        }
+        return nbrOfPod;
+    }
+
+    public Integer getClosedZoneIdToOppBase(List<Integer> zoneId, Board board) {
+        Long resultLong = 5000l;
+        List<Integer> oppPathList;
+        Integer forReturn = 0;
+
+        for (int i = 0; i < zoneId.size(); i++) {
+            oppPathList = new ArrayList<>();
+            Node result = this.BFS(zoneId.get(i), board.getOppBAseZoneId(), board);
+            while (result != null) {
+                oppPathList.add(result.getId());
+                result = result.parent;
+            }
+            Long nbr = oppPathList.stream().count();
+            System.err.println("nbr onf zone between zone and opp (" + zoneId.get(i) + "): " + nbr);
+            if (nbr < resultLong) {
+                resultLong = nbr;
+                forReturn = zoneId.get(i);
+            }
+        }
+        return forReturn;
+    }
 }
 
 class Zone {
@@ -710,12 +865,13 @@ class Zone {
     Integer goal;
     Boolean visited;
     Boolean blitzAttack;
+    Double score;
 
     // constructor
     public Zone() {
     }
 
-    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum) {
+    public Zone(Integer zId, Integer ownerId, Integer podsP0, Integer podsP1, Integer visible, Integer platinum, Double score) {
         this.zId = zId;
         this.ownerId = ownerId;
         this.podsP0 = podsP0;
@@ -727,6 +883,7 @@ class Zone {
         this.goal = null;
         this.visited = false;
         this.blitzAttack = false;
+        this.score = score;
     }
 
     // getters and setters
@@ -818,6 +975,14 @@ class Zone {
         this.blitzAttack = blitzAttack;
     }
 
+    public Double getScore() {
+        return score;
+    }
+
+    public void setScore(Double score) {
+        this.score = score;
+    }
+
     // to string
     @Override
     public String toString() {
@@ -833,6 +998,7 @@ class Zone {
                 ", goal=" + goal +
                 ", visited=" + visited +
                 ", blitzAttack=" + blitzAttack +
+                ", score=" + score +
                 '}';
     }
 

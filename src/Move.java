@@ -60,9 +60,9 @@ class Move {
      */
     public String moveIA3(Board board, int myId) {
         String move = "";
-        // on my base, pods > 40 -> BLITZATTACK to oppBase !!!
+        // on my base, pods > 20 -> BLITZATTACK to oppBase !!!
         Set<Zone> podZones = utils.findPodZonesList(board, myId);
-        List<Zone> podForAttack = utils.getGroupOfPodForAttackOppBase(podZones, myId, 40);
+        List<Zone> podForAttack = utils.getGroupOfPodForAttackOppBase(podZones, myId, 20);
         if (!podForAttack.isEmpty()) {
             for (Zone zone: podForAttack ) {
                 Zone zoneForAttack = board.getZoneList().get(zone.getzId()); // put goal and visited zone for attack
@@ -105,7 +105,8 @@ class Move {
         // for other pods:
         // only one pod getOut, other pods are for my base defense
         // explore or random -> if neighbor is oppBase -> attack
-        move += this.moveExplAndRandAndAttackNeihbotBaseOpp(board, myId);
+//        move += this.moveExplAndRandAndAttackNeihbotBaseOpp(board, myId); // old
+        move += this.moveWithScore(board, myId);
 
         // cleaning old goal without zone with blitzAttack
         utils.removeOldGoalExceptBlitzZone(board);
@@ -183,7 +184,80 @@ class Move {
             }
 
         }
-        return move;
+        return move.trim();
+    }
+
+    public String moveWithScore(Board board, int myId) {
+        // todo 1 try to move better with score for group drone IA!!
+        String move = "";
+        Set<Zone> podZones = utils.findPodZonesList(board, myId);
+        Integer nbrOfPod;
+        Double score = Double.MIN_VALUE;
+        Integer bestZoneChoice  = -1000;
+        Set<Integer> bestZoneListSet = new HashSet<>();
+        List<Integer> bestZoneList = new ArrayList<>();
+
+
+        for (Zone podZone: podZones ) {
+            if (podZone.getGoal() == null) {
+                Long nbrOfNeighbor = podZone.getNeighbor().stream().count(); // count neighbor
+                nbrOfPod = utils.getNbrOfPodOnZone(podZone, myId); // count nbr of pod on zone
+                System.err.println("podzone: " + podZone.getzId());
+                // todo 2 check Score of possibility zone
+                for (Integer neighborId : podZone.getNeighbor()) { // find best score on neighbor on each zonePod
+                    Zone zone = board.getZoneList().get(neighborId);
+                    System.err.println("neighbor:" + neighborId + " Score: " + board.getZoneList().get(neighborId).getScore());
+                    if (zone.getScore() > score) {
+                        score = zone.getScore();
+                        bestZoneChoice = neighborId;
+                    }
+                }
+                if (bestZoneChoice != -1000) {
+                    bestZoneChoice = board.getZoneList().get(bestZoneChoice).getzId();
+                } else {
+                    bestZoneChoice = null;
+                }
+
+                for (Integer neighborId : podZone.getNeighbor()) { // other turn for take best score zone list
+                    Zone zone = board.getZoneList().get(neighborId);
+                    if (zone.getScore().equals(score)) {
+                        bestZoneListSet.add(neighborId);
+                    }
+                }
+                bestZoneList.addAll(bestZoneListSet);
+
+                System.err.println("pods on: " + podZone.getzId() + " bestNextMove: " + bestZoneChoice);
+                System.err.println("best Zone list: " + bestZoneList.toString());
+
+                if (bestZoneList.size() == nbrOfNeighbor) { // find neighbor closed of oppBase
+                    System.err.println("---> passage -> search closed to opp base !!!");
+                    Integer closedToOppZoneId = utils.getClosedZoneIdToOppBase(bestZoneList, board);
+                    System.err.println("closed neighbor to opp base: " + closedToOppZoneId);
+                    move += "1 " + podZone.getzId() + " " + closedToOppZoneId + " ";
+                }
+                if (bestZoneList.size() > 1) { // zone with equal score, pod can divise?
+                    for (int i = 0; i < bestZoneList.size(); i++) {
+                        System.err.println("bestzone list: " + board.getZoneList().get(bestZoneList.get(i)).getzId());
+                        move += "1 " + podZone.getzId() + " " + bestZoneList.get(i) + " ";
+                    }
+
+                }
+
+                else {
+                    move += nbrOfPod + " " + podZone.getzId() + " " + bestZoneChoice + " ";
+                }
+                move += nbrOfPod + " " + podZone.getzId() + " " + bestZoneChoice + " ";
+                // todo 3 avoid two zone of pod to same better zone !
+
+                // cleaning old goal without zone with blitzAttack
+                utils.removeOldGoalExceptBlitzZone(board);
+                bestZoneListSet = new HashSet<>();
+                bestZoneList = new ArrayList<>();
+                score = Double.MIN_VALUE;
+                bestZoneChoice = -1;
+            }
+        }
+        return move.trim();
     }
 
 }
