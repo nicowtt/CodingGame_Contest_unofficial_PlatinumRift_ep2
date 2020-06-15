@@ -1,5 +1,4 @@
 import java.util.*;
-import java.util.stream.Collectors;
 
 class Utils {
     private final int NOPATH = -1;
@@ -300,7 +299,7 @@ class Utils {
                 result = result.parent;
             }
             Long nbr = oppPathList.stream().count();
-            System.err.println("nbr onf zone between zone and opp (" + zoneId.get(i) + "): " + nbr);
+//            System.err.println("nbr onf zone between zone and opp (" + zoneId.get(i) + "): " + nbr);
             if (nbr < resultLong) {
                 resultLong = nbr;
                 forReturn = zoneId.get(i);

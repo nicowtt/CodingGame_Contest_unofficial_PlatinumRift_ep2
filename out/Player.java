@@ -1,13 +1,10 @@
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -107,13 +104,11 @@ class Move {
      * @return
      */
     public String firstMoveIA13(Board board) {
-        boolean fivePodAlreadyStart = false;
-        boolean tenPodAlreadyStart = false;
         String move = "";
 
         // if opp is in range of 7 zones! -> attack with 10 pods
         if (board.getZoneList().get(board.getMyBaseZoneId()).getDistance().get(board.oppBAseZoneId) <= 8) {
-            System.err.println("pass direct attack!!");
+//            System.err.println("pass direct attack!!");
             // attack with 10 drones
             int firstMovetoZone = utils.getFirstMoveToBFSPath(board.getMyBaseZoneId(), board.getOppBAseZoneId(), board); // first zone direction to oppBase
 
@@ -174,9 +169,6 @@ class Move {
         }
 
         for (Zone zone : zoneWithGoal ) {
-//            System.err.println("passage to goal!!");
-//            System.err.println("zoneId: " + zone.getzId());
-//            System.err.println("goal to: " + zone.getGoal());
             int from = zone.getzId();
             if (myId == 0) {
                nbrOfPodOnZone = zone.getPodsP0();
@@ -199,13 +191,11 @@ class Move {
         // for other pods:
         // only one pod getOut, other pods are for my base defense
         // explore or random -> if neighbor is oppBase -> attack
-//        move += this.moveExplAndRandAndAttackNeihbotBaseOpp(board, myId); // old
         move += this.moveWithScore(board, myId);
 
         // cleaning old goal without zone with blitzAttack
         utils.removeOldGoalExceptBlitzZone(board);
 
-//        System.err.println(move);
         return move.trim();
     }
 
@@ -282,7 +272,6 @@ class Move {
     }
 
     public String moveWithScore(Board board, int myId) {
-        // todo 1 try to move better with score for group drone IA!!
         String move = "";
         Set<Zone> podZones = utils.findPodZonesList(board, myId);
         Integer nbrOfPod;
@@ -291,16 +280,14 @@ class Move {
         Set<Integer> bestZoneListSet = new HashSet<>();
         List<Integer> bestZoneList = new ArrayList<>();
 
-
         for (Zone podZone: podZones ) {
             if (podZone.getGoal() == null) {
                 Long nbrOfNeighbor = podZone.getNeighbor().stream().count(); // count neighbor
                 nbrOfPod = utils.getNbrOfPodOnZone(podZone, myId); // count nbr of pod on zone
-                System.err.println("podzone: " + podZone.getzId());
-                // todo 2 check Score of possibility zone
+//                System.err.println("podzone: " + podZone.getzId());
                 for (Integer neighborId : podZone.getNeighbor()) { // find best score on neighbor on each zonePod
                     Zone zone = board.getZoneList().get(neighborId);
-                    System.err.println("neighbor:" + neighborId + " Score: " + board.getZoneList().get(neighborId).getScore());
+//                    System.err.println("neighbor:" + neighborId + " Score: " + board.getZoneList().get(neighborId).getScore());
                     if (zone.getScore() > score) {
                         score = zone.getScore();
                         bestZoneChoice = neighborId;
@@ -320,28 +307,25 @@ class Move {
                 }
                 bestZoneList.addAll(bestZoneListSet);
 
-                System.err.println("pods on: " + podZone.getzId() + " bestNextMove: " + bestZoneChoice);
-                System.err.println("best Zone list: " + bestZoneList.toString());
+//                System.err.println("pods on: " + podZone.getzId() + " bestNextMove: " + bestZoneChoice);
+//                System.err.println("best Zone list: " + bestZoneList.toString());
 
                 if (bestZoneList.size() == nbrOfNeighbor) { // find neighbor closed of oppBase
-                    System.err.println("---> passage -> search closed to opp base !!!");
+//                    System.err.println("---> passage -> search closed to opp base !!!");
                     Integer closedToOppZoneId = utils.getClosedZoneIdToOppBase(bestZoneList, board);
-                    System.err.println("closed neighbor to opp base: " + closedToOppZoneId);
+//                    System.err.println("closed neighbor to opp base: " + closedToOppZoneId);
                     move += "1 " + podZone.getzId() + " " + closedToOppZoneId + " ";
                 }
                 if (bestZoneList.size() > 1) { // zone with equal score, pod can divise?
                     for (int i = 0; i < bestZoneList.size(); i++) {
-                        System.err.println("bestzone list: " + board.getZoneList().get(bestZoneList.get(i)).getzId());
+//                        System.err.println("bestzone list: " + board.getZoneList().get(bestZoneList.get(i)).getzId());
                         move += "1 " + podZone.getzId() + " " + bestZoneList.get(i) + " ";
                     }
-
                 }
-
                 else {
                     move += nbrOfPod + " " + podZone.getzId() + " " + bestZoneChoice + " ";
                 }
                 move += nbrOfPod + " " + podZone.getzId() + " " + bestZoneChoice + " ";
-                // todo 3 avoid two zone of pod to same better zone !
 
                 // cleaning old goal without zone with blitzAttack
                 utils.removeOldGoalExceptBlitzZone(board);
@@ -492,10 +476,9 @@ class Player {
                 Collections.reverse(oppPathList);
                 board.setPathToOpp(oppPathList);
                 Instant end = Instant.now();
-                System.err.println("BFS time" + Duration.between(start, end));
+//                System.err.println("BFS time" + Duration.between(start, end));
 
                 // find distances from myBase to every other zone
-                Instant start2 = Instant.now();
                 for (int i = 0; i < board.getZoneList().size(); i++) {
                     List<Integer> distanceResult = new ArrayList<>();
                     Node distanceZone = utils.BFS(board.getMyBaseZoneId(), board.getZoneList().get(i).getzId(), board);
@@ -506,8 +489,6 @@ class Player {
                     Long distanceLong = distanceResult.stream().count();
                     board.getZoneList().get(board.getMyBaseZoneId()).addDistance(board.getZoneList().get(i).getzId(), distanceLong.intValue());
                 }
-                Instant end2 = Instant.now();
-                System.err.println("BFS time my base to each zone" + Duration.between(start2, end2));
             }
 
             // create score for all zone
@@ -519,10 +500,6 @@ class Player {
                 allZoneScoreUpdated.add(zoneToUpdateScore);
             }
             board.setZoneList(allZoneScoreUpdated);
-            // check
-//            System.err.println("zone37 score: " + board.getZoneList().get(37).getScore());
-//            System.err.println("zone21 score: " + board.getZoneList().get(21).getScore());
-
 
             // all zone visited to false every 10 turns
             if (turnCount % 10 == 0) {
@@ -843,7 +820,7 @@ class Utils {
                 result = result.parent;
             }
             Long nbr = oppPathList.stream().count();
-            System.err.println("nbr onf zone between zone and opp (" + zoneId.get(i) + "): " + nbr);
+//            System.err.println("nbr onf zone between zone and opp (" + zoneId.get(i) + "): " + nbr);
             if (nbr < resultLong) {
                 resultLong = nbr;
                 forReturn = zoneId.get(i);

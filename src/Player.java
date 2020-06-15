@@ -87,10 +87,9 @@ class Player {
                 Collections.reverse(oppPathList);
                 board.setPathToOpp(oppPathList);
                 Instant end = Instant.now();
-                System.err.println("BFS time" + Duration.between(start, end));
+//                System.err.println("BFS time" + Duration.between(start, end));
 
                 // find distances from myBase to every other zone
-                Instant start2 = Instant.now();
                 for (int i = 0; i < board.getZoneList().size(); i++) {
                     List<Integer> distanceResult = new ArrayList<>();
                     Node distanceZone = utils.BFS(board.getMyBaseZoneId(), board.getZoneList().get(i).getzId(), board);
@@ -101,8 +100,6 @@ class Player {
                     Long distanceLong = distanceResult.stream().count();
                     board.getZoneList().get(board.getMyBaseZoneId()).addDistance(board.getZoneList().get(i).getzId(), distanceLong.intValue());
                 }
-                Instant end2 = Instant.now();
-                System.err.println("BFS time my base to each zone" + Duration.between(start2, end2));
             }
 
             // create score for all zone
@@ -114,10 +111,6 @@ class Player {
                 allZoneScoreUpdated.add(zoneToUpdateScore);
             }
             board.setZoneList(allZoneScoreUpdated);
-            // check
-//            System.err.println("zone37 score: " + board.getZoneList().get(37).getScore());
-//            System.err.println("zone21 score: " + board.getZoneList().get(21).getScore());
-
 
             // all zone visited to false every 10 turns
             if (turnCount % 10 == 0) {
